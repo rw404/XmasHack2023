@@ -4,19 +4,46 @@ max_batch_size: 0
 
 input [
     {
-        name: "input.1"
+        name: "input"
         data_type: TYPE_FP32
-        format: FORMAT_NHWC
-        dims: [1, 28, 28]
-        reshape { shape: [ 1, 1, 28, 28 ] }
+        dims: [1, 3, 96, 128]
+    },
+    {
+        name: "onnx::Add_1"
+        data_type: TYPE_FP32
+        dims: [1,3,192,256]
+    },
+    {
+        name: "onnx::Add_2"
+        data_type: TYPE_FP32
+        dims: [1,3,384,512]
+    },
+    {
+        name: "onnx::Add_3"
+        data_type: TYPE_FP32
+        dims: [1,3,768,1024]
     }
 ]
 output [
   {
-    name: "26"
+    name: "output"
     data_type: TYPE_FP32
-    dims: [10]
-    reshape { shape: [ 1, 10] }
+    dims: [1,3,192,256]
+  },
+  {
+    name: "onnx::Add_872"
+    data_type: TYPE_FP32
+    dims: [1,3,384,512]
+  },
+  {
+    name: "onnx::Add_1205"
+    data_type: TYPE_FP32
+    dims: [1,3,768,1024]
+  },
+  {
+    name: "1467"
+    data_type: TYPE_FP32
+    dims: [1,3,768,1024]
   }
 ]
 
