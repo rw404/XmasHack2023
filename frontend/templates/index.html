@@ -43,28 +43,25 @@
 						<!-- Intro -->
 							<article id="image">
 								<h2 class="major">Image</h2>
-								<!--<span class="image main"><img src="../static/images/pic01.jpg" alt="" /></span> -->
-								<main class="main_full">
-									<div class="container">
-										<div class="panel">
-											<div class="button_outer">
-												<div class="btn_upload">
-													<input type="file" id="upload_file" name="">
-													Upload Image
-												</div>
-												<div class="processing_bar"></div>
-												<div class="success_box"></div>
-											</div>
-										</div>
-										<div class="error_msg"></div>
-										<div class="uploaded_file_view" id="uploaded_view">
-											<span class="file_remove">X</span>
-										</div>
+								<div class="file-upload">
+									<button class="file-upload-btn" type="button" onclick="$('.file-upload-input').trigger( 'click' )">Add Image</button>
+								  
+									<div class="image-upload-wrap">
+									  <input class="file-upload-input" type='file' onchange="readURL(this);" accept="image/*" />
+									  <div class="drag-text">
+										<h3>Drag and drop a file or select add Image</h3>
+									  </div>
 									</div>
-								</main>
-								<div style="text-align: center; margin-bottom: 10em;"><button class='glowing-btn'><span class='glowing-txt'>C<span
-									class='faulty-letter'>L</span>ICK</span></button>
+									<div class="file-upload-content">
+									  <img class="file-upload-image" src="#" alt="your image" />
+									  <div class="image-title-wrap">
+										<button type="button" onclick="removeUpload()" class="remove-image">Remove <span class="image-title">Uploaded Image</span></button>
+									  </div>
+									</div>
 								</div>
+								<!-- <div style="text-align: center; margin-bottom: 1em;"><button class='glowing-btn'><span class='glowing-txt'>C<span
+									class='faulty-letter'>L</span>ICK</span></button>
+								</div> -->
 							</article>
 
 						<!-- Work -->
