@@ -1,0 +1,31 @@
+name: "onnx-mnist"
+platform: "onnxruntime_onnx"
+max_batch_size: 0
+
+input [
+    {
+        name: "input.1"
+        data_type: TYPE_FP32
+        format: FORMAT_NHWC
+        dims: [1, 28, 28]
+        reshape { shape: [ 1, 1, 28, 28 ] }
+    }
+]
+output [
+  {
+    name: "26"
+    data_type: TYPE_FP32
+    dims: [10]
+    reshape { shape: [ 1, 10] }
+  }
+]
+
+instance_group [
+    {
+        count: 1
+        kind: KIND_GPU
+        gpus: [0]
+    }
+]
+
+dynamic_batching: { max_queue_delay_microseconds: 500 }
