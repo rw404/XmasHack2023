@@ -1,7 +1,5 @@
 import base64
-import cgi
 import io
-import urllib
 
 import numpy as np
 from flask import Flask, render_template, request
@@ -12,7 +10,6 @@ from tritonclient.http import (InferenceServerClient, InferInput,
 from functools import lru_cache
 
 import cv2
-import torch
 from gevent import monkey
 monkey.patch_all()
 
@@ -113,18 +110,31 @@ def main():
             
             result = main_back(img)
             res_img = cv2.resize(result, inp_size[::-1])
-            res_img = get_correction_mask(old_img, res_img.copy())# MASKS
             
             print(res_img.shape)
             print(old_img.shape)
             res_img = np.hstack([old_img, res_img])
             res_img = cv2.cvtColor(res_img, cv2.COLOR_RGB2BGR)
-            
             cv2.imwrite("static/converted_img.jpg", res_img)
+            
         elif 'convert_mask_img' in request.form:
-            img = np.array(Image.open('mask_image.jpg'))
-            res_img = np.hstack([img, img])
-            Image.fromarray(res_img).save('static/converted_mask_img.jpg')
+            img = cv2.imread("mask_image.jpg")
+            old_img = img.copy()
+            old_img = cv2.cvtColor(old_img, cv2.COLOR_BGR2RGB)
+            
+            inp_size = img.shape[:2]
+
+            img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+            img = cv2.resize(img, (512, 512))
+            
+            result = main_back(img)
+            res_img = cv2.resize(result, inp_size[::-1])
+            res_img = get_correction_mask(old_img, res_img.copy())# MASKS
+            
+            res_img = np.hstack([old_img, res_img])
+            res_img = cv2.cvtColor(res_img, cv2.COLOR_RGB2BGR)
+            
+            cv2.imwrite("static/converted_mask_img.jpg", res_img)
         else:
             for i, file_storage in enumerate(request.files.getlist('files[]')):
                 Image.open(io.BytesIO(file_storage.read())).save(f'static/uploads/image_{i}.jpg')
