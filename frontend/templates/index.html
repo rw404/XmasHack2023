@@ -1,0 +1,97 @@
+<!DOCTYPE HTML>
+<!--
+	Dimension by HTML5 UP
+	html5up.net | @ajlkn
+	Free for personal and commercial use under the CCA 3.0 license (html5up.net/license)
+-->
+<html>
+	<head>
+		<title>Dimension by HTML5 UP</title>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
+		<link rel="stylesheet" href="../static/assets/css/main.css" />
+		<noscript><link rel="stylesheet" href="../static/assets/css/noscript.css" /></noscript>
+	</head>
+	<body class="is-preload">
+
+		<!-- Wrapper -->
+			<div id="wrapper">
+
+				<!-- Header -->
+					<header id="header">
+						<div class="logo">
+							<span class="icon"></span>
+						</div>
+						<div class="content">
+							<div class="inner">
+								<h1>Macrame Club</h1>
+								<p>Image and Video quality enhancement</p>
+							</div>
+						</div>
+						<nav>
+							<ul>
+								<li><a href="#image">Image</a></li>
+								<li><a href="#video">Video</a></li>
+							</ul>
+						</nav>
+					</header>
+
+				<!-- Main -->
+					<div id="main">
+
+						<!-- Intro -->
+							<article id="image">
+								<h2 class="major">Image</h2>
+								<div class="file-upload">
+									<button class="file-upload-btn" type="button" onclick="$('.file-upload-input').trigger( 'click' )">Add Image</button>
+								  
+									<div class="image-upload-wrap">
+									  <input class="file-upload-input" type='file' onchange="readURL(this);" accept="image/*" name='img'/>
+									  <div class="drag-text">
+										<h3>Drag and drop a file or select add Image</h3>
+									  </div>
+									</div>
+									<div class="file-upload-content">
+									  <img class="file-upload-image" src="image.jpg" alt="your image" />
+
+									  <div class="image-title-wrap">
+										<button type="button" onclick="removeUpload()" class="remove-image">Remove Uploaded Image</span></button>
+									  </div>
+
+									  <div class="image-change-wrap" style="text-align: center; margin-bottom: 2em; margin-top: 2em;">
+										<button class='glowing-btn' type="button" onclick="changeUpload();" ><span class='glowing-txt'>CO<span class='faulty-letter'>N</span>VERT</span></button>
+									  </div>
+									  
+									</div>
+									
+								</div>
+								
+							</article>
+
+						<!-- Work -->
+							<article id="video">
+								<h2 class="major">Video</h2>
+								<span class="image main"><img src="../static/images/pic02.jpg" alt="" /></span>
+							</article>
+
+					</div>
+
+				<!-- Footer -->
+					<footer id="footer">
+						<p</p>
+					</footer>
+
+			</div>
+
+		<!-- BG -->
+			<div id="bg"></div>
+
+		<!-- Scripts -->
+			<script src="../static/assets/js/jquery.min.js"></script>
+			<script src="../static/assets/js/browser.min.js"></script>
+			<script src="../static/assets/js/breakpoints.min.js"></script>
+			<script src="../static/assets/js/util.js"></script>
+			<script src="../static/assets/js/main.js"></script>
+
+	</body>
+</html>
