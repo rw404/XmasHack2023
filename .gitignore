@@ -164,3 +164,4 @@ cython_debug/
 requirements.txt
 frontend/image.jpg
 frontend/static/converted_img.jpg
+frontend/static/*.jpg

@@ -10,8 +10,7 @@ from tritonclient.http import (InferenceServerClient, InferInput,
 
 from functools import lru_cache
 
-import time
-import os
+from skimage.exposure import match_histograms
 import cv2
 from gevent import monkey
 monkey.patch_all()
@@ -46,6 +45,28 @@ def get_correction_mask(orig, proc, quantil=20):
     z = np.zeros_like(sig, dtype=np.uint8)
 
     return np.stack([flash, z, dark], axis=-1).astype(np.uint8)
+
+def match_hists(img_list):
+    '''img_list: list of RGB 512x512x3'''
+    
+    brightness = []
+    for i in range(len(img_list)):
+        gray = cv2.cvtColor(img_list[i], cv2.COLOR_RGB2GRAY)
+        brightness.append(gray.mean())
+        
+    if not len(brightness) % 2:
+        brightness.append(0)
+    
+    ref = np.where(brightness == np.median(brightness))[0][0]
+    
+    res_img_list = []
+    for i in range(len(img_list)):
+        if i != ref:
+            res_img_list.append(match_histograms(img_list[i], img_list[ref]).astype(np.uint8))
+        else:
+            res_img_list.append(img_list[i])
+        
+    return res_img_list
 
 def main_back(img_list):
     triton_client = get_client()
@@ -148,8 +169,9 @@ def main():
                 img = np.array(img)
                 imgs.append(img)
                 
+            new_imgs = match_hists(imgs)
             # convert imgs
-            gallery_img = create_img_gallery(imgs, imgs)
+            gallery_img = create_img_gallery(imgs, new_imgs)
             Image.fromarray(gallery_img).save('static/gallery_img.jpg')
 
     return render_template('index.html')
