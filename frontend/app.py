@@ -9,13 +9,15 @@ from flask import Flask, render_template, request
 from PIL import Image
 from tritonclient.http import (InferenceServerClient, InferInput,
                                InferRequestedOutput)
+from gevent import monkey
+monkey.patch_all()
 
 app = Flask(__name__)
 
 
 @lru_cache
 def get_client():
-    return InferenceServerClient(url="localhost:8500")
+    return InferenceServerClient(url="0.0.0.0:8500")
 
 
 def main_back(img_list):
