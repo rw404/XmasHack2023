@@ -8,7 +8,7 @@ from flask import Flask, render_template, request
 from PIL import Image
 
 app = Flask(__name__)
-
+app.config['UPLOADED_FILES'] = 'static/uploads'
 
 @app.after_request
 def add_header(r):
@@ -25,25 +25,35 @@ def add_header(r):
 
 @app.route('/', methods=['GET', 'POST'])
 def main():
-    data = {'converted_img': None}
+    #data = {'converted_img': None}
     if request.method == 'POST':
-        if 'img' in request.form:
-            img_data = base64.b64decode(request.form['img'].split(',')[1])
+        if 'color_img' in request.form:
+            img_data = base64.b64decode(request.form['color_img'].split(',')[1])
             img = Image.open(io.BytesIO(img_data)).convert('RGB')
-            img.save('image.jpg')
-            data['converted_img'] = None
-        elif 'convert_img' in request.form:
-            img = np.array(Image.open('image.jpg'))
-            if img.shape[0] > img.shape[1]:
-                res_img = np.hstack([img, img])
-            else:
-                res_img = np.vstack([img, img])
-            Image.fromarray(res_img).save('static/converted_img.jpg')
-            data['converted_img'] = 'static/converted_img.jpg'
+            img.save('color_image.jpg')
+            
+        elif 'mask_img' in request.form:
+            img_data = base64.b64decode(request.form['mask_img'].split(',')[1])
+            img = Image.open(io.BytesIO(img_data)).convert('RGB')
+            img.save('mask_image.jpg')
+            
+        elif 'convert_color_img' in request.form:
+            img = np.array(Image.open('color_image.jpg'))
+            res_img = np.hstack([img, img])
+            Image.fromarray(res_img).save('static/converted_color_img.jpg')
+        elif 'convert_mask_img' in request.form:
+            img = np.array(Image.open('mask_image.jpg'))
+            res_img = np.hstack([img, img])
+            Image.fromarray(res_img).save('static/converted_mask_img.jpg')
+        else:
+            for i, file_storage in enumerate(request.files.getlist('files[]')):
+                Image.open(io.BytesIO(file_storage.read())).save(f'static/uploads/image_{i}.jpg')
 
-        print(data)
-    return render_template('index.html', flask_data=data)
+    return render_template('index.html')
 
+
+def create_img_gallery(old_imgs, new_imgs):
+    pass
 
 if __name__ == '__main__':
     app.run(debug=True)

@@ -1262,6 +1262,7 @@ input, select, textarea {
 		background-image: radial-gradient(rgba(0, 0, 0, 0.25) 25%, rgba(0, 0, 0, 0) 55%);
 		max-width: 100%;
 		text-align: center;
+		margin: auto;
 	}
 
 		#header > * {
@@ -1890,15 +1891,15 @@ input, select, textarea {
 }
 
   
-  .file-upload {
+  .file-color-upload {
 	background-color: #201d1d;
 	width: 600px;
 	height: 100%;
 	margin: 0 auto;
-	padding: 10px;
+	padding: 20px;
   }
   
-  .file-upload-btn {
+  .file-color-upload-btn {
 	width: 100%;
 	margin: 0;
 	color: #fff;
@@ -1917,26 +1918,26 @@ input, select, textarea {
 			0px 8px 16px rgba(0, 255, 255, 0.5);
   }
   
-  .file-upload-btn:hover {
+  .file-color-upload-btn:hover {
 	background: #113641;
 	color: #ffffff;
 	transition: all .2s ease;
 	cursor: pointer;
   }
   
-  .file-upload-btn:active {
+  .file-color-upload-btn:active {
 	border: 0;
 	transition: all .2s ease;
   }
   
-  .file-upload-content {
+  .file-color-upload-content {
 	display: none;
 	margin: auto;
 	text-align: center;
 	padding: 70px 0;
   }
   
-  .file-upload-input {
+  .file-color-upload-input {
 	position: absolute;
 	margin: 0;
 	padding: 0;
@@ -1947,28 +1948,28 @@ input, select, textarea {
 	cursor: pointer;
   }
   
-  .image-upload-wrap {
+  .image-color-upload-wrap {
 	margin-top: 20px;
 	border: 6px dashed #74bdcd;
 	position: relative;
   }
   
-  .image-dropping,
-  .image-upload-wrap:hover {
+  .image-color-dropping,
+  .image-color-upload-wrap:hover {
 	background-color: #113641;
 	border: 6px dashed #74bdcd;
   }
   
-  .image-title-wrap {
+  .image-color-title-wrap {
 	padding: 0 15px 15px 15px;
 	color: #74bdcd;
   }
   
-  .drag-text {
+  .drag-color-text {
 	text-align: center;
   }
   
-  .drag-text h3 {
+  .drag-color-text h3 {
 	font-weight: 100;
 	font-size: x-large;
 	text-transform: uppercase;
@@ -1976,14 +1977,14 @@ input, select, textarea {
 	padding: 60px 0;
   }
   
-  .file-upload-image {
+  .file-color-upload-image {
 	width: 100%;
 	height: 100%;
 	margin: auto;
 	padding: 20px;
   }
   
-  .remove-image {
+  .remove-color-image {
 	width: 400px;
 	margin: 0;
 	color: #fff;
@@ -2002,14 +2003,170 @@ input, select, textarea {
 			0px 8px 16px rgba(0, 255, 255, 0.5);
   }
   
-  .remove-image:hover {
+  .remove-color-image:hover {
 	background: #74bdcd;
 	color: #ffffff;
 	transition: all .2s ease;
 	cursor: pointer;
   }
   
-  .remove-image:active {
+  .remove-color-image:active {
 	border: 0;
 	transition: all .2s ease;
+  }
+
+
+ 
+
+  .file-mask-upload {
+	background-color: #201d1d;
+	width: 600px;
+	height: 100%;
+	margin: 0 auto;
+	padding: 10px;
+  }
+  
+  .file-mask-upload-btn {
+	width: 100%;
+	margin: 0;
+	color: #fff;
+	background: #353736;
+	border: none;
+	padding: 10px;
+	border-radius: 4px;
+	border-bottom: 4px solid #ffffff;
+	transition: all .2s ease;
+	outline: none;
+	text-transform: uppercase;
+	font-weight: 700;
+	box-shadow: 0px 1px 2px rgba(0, 255, 255, 0.5),
+			0px 2px 4px rgba(0, 255, 255, 0.5),
+			0px 4px 8px rgba(0, 255, 255, 0.5),
+			0px 8px 16px rgba(0, 255, 255, 0.5);
+  }
+  
+  .file-mask-upload-btn:hover {
+	background: #113641;
+	color: #ffffff;
+	transition: all .2s ease;
+	cursor: pointer;
+  }
+  
+  .file-mask-upload-btn:active {
+	border: 0;
+	transition: all .2s ease;
+  }
+  
+  .file-mask-upload-content {
+	display: none;
+	margin: auto;
+	text-align: center;
+	padding: 70px 0;
+  }
+  
+  .file-mask-upload-input {
+	position: absolute;
+	margin: 0;
+	padding: 0;
+	width: 100%;
+	height: 100%;
+	outline: none;
+	opacity: 0;
+	cursor: pointer;
+  }
+  
+  .image-mask-upload-wrap {
+	margin-top: 20px;
+	border: 6px dashed #74bdcd;
+	position: relative;
+  }
+  
+  .image-mask-dropping,
+  .image-mask-upload-wrap:hover {
+	background-color: #113641;
+	border: 6px dashed #74bdcd;
+  }
+  
+  .image-mask-title-wrap {
+	padding: 0 15px 15px 15px;
+	color: #74bdcd;
+  }
+  
+  .drag-mask-text {
+	text-align: center;
+  }
+  
+  .drag-mask-text h3 {
+	font-weight: 100;
+	font-size: x-large;
+	text-transform: uppercase;
+	color: #ffffff;
+	padding: 60px 0;
+  }
+  
+  .file-mask-upload-image {
+	width: 100%;
+	height: 100%;
+	margin: auto;
+	padding: 20px;
+  }
+  
+  .remove-mask-image {
+	width: 400px;
+	margin: 0;
+	color: #fff;
+	background: #74bdcd;
+	border: none;
+	padding: 10px;
+	border-radius: 4px;
+	border-bottom: 4px solid #74bdcd;
+	transition: all .2s ease;
+	outline: none;
+	text-transform: uppercase;
+	font-weight: 700;
+	box-shadow: 0px 1px 2px rgba(0, 255, 255, 0.5),
+			0px 2px 4px rgba(0, 255, 255, 0.5),
+			0px 4px 8px rgba(0, 255, 255, 0.5),
+			0px 8px 16px rgba(0, 255, 255, 0.5);
+  }
+  
+  .remove-mask-image:hover {
+	background: #74bdcd;
+	color: #ffffff;
+	transition: all .2s ease;
+	cursor: pointer;
+  }
+  
+  .remove-mask-image:active {
+	border: 0;
+	transition: all .2s ease;
+  }
+
+
+
+.custom-file-upload {
+	width: 100%;
+	margin: 0;
+	color: #fff;
+	background: #353736;
+	border: none;
+	padding: 10px;
+	border-radius: 4px;
+	border-bottom: 4px solid #ffffff;
+	transition: all .2s ease;
+	outline: none;
+	text-transform: uppercase;
+	text-align: center;
+	font-weight: 700;
+	box-shadow: 0px 1px 2px rgba(0, 255, 255, 0.5),
+			0px 2px 4px rgba(0, 255, 255, 0.5),
+			0px 4px 8px rgba(0, 255, 255, 0.5),
+			0px 8px 16px rgba(0, 255, 255, 0.5);
+}
+
+.file-gallery-images {
+	width: 100%;
+	height: 100%;
+	margin: auto;
+	padding: 20px;
   }
