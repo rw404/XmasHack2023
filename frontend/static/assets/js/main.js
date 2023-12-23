@@ -401,19 +401,19 @@
 })(jQuery);
 
 
-function readURL(input) {
+function readColorImgURL(input) {
   if (input.files && input.files[0]) {
 
     var reader = new FileReader();
 
 
     reader.onload = function(e) {
-      $('.image-upload-wrap').hide();
+      $('.image-color-upload-wrap').hide();
 
-      $('.file-upload-image').attr('src', e.target.result);
-      $('.file-upload-content').show();
+      $('.file-color-upload-image').attr('src', e.target.result);
+      $('.file-color-upload-content').show();
 
-      $('.image-title').html(input.files[0].name);
+      $('.image-color-title').html(input.files[0].name);
     };
 
     reader.readAsDataURL(input.files[0])
@@ -421,39 +421,134 @@ function readURL(input) {
 	reader.onloadend = function() {
 		const xhr = new XMLHttpRequest();
 		var formData = new FormData();
-		formData.append('img', reader.result)
+		formData.append('color_img', reader.result)
 		xhr.open("POST", '/', true);
 		xhr.send(formData);
 	  };
   } else {
-    removeUpload();
+    removeColorImgUpload();
   }
 }
 
+function readMaskImgURL(input) {
+	if (input.files && input.files[0]) {
+  
+	  var reader = new FileReader();
+  
+	  
+	  reader.onload = function(e) {
+		$('.image-mask-upload-wrap').hide();
+  
+		$('.file-mask-upload-image').attr('src', e.target.result);
+		$('.file-mask-upload-content').show();
+  
+		$('.image-mask-title').html(input.files[0].name);
+	  };
+  
+	  reader.readAsDataURL(input.files[0])
+  
+	  reader.onloadend = function() {
+		  const xhr = new XMLHttpRequest();
+		  var formData = new FormData();
+		  formData.append('mask_img', reader.result)
+		  xhr.open("POST", '/', true);
+		  xhr.send(formData);
+		};
+	} else {
+	  removeMaskImgUpload();
+	}
+  }
 
 
-function removeUpload() {
-  $('.file-upload-input').replaceWith($('.file-upload-input').clone());
-  $('.file-upload-content').hide();
-  $('.image-upload-wrap').show();
+
+function removeColorImgUpload() {
+  $('.file-color-upload-input').replaceWith($('.file-color-upload-input').clone());
+  $('.file-color-upload-content').hide();
+  $('.image-color-upload-wrap').show();
 }
-$('.image-upload-wrap').bind('dragover', function () {
-		$('.image-upload-wrap').addClass('image-dropping');
+$('.image-color-upload-wrap').bind('dragover', function () {
+		$('.image-color-upload-wrap').addClass('image-color-dropping');
 	});
-	$('.image-upload-wrap').bind('dragleave', function () {
-		$('.image-upload-wrap').removeClass('image-dropping');
+	$('.image-color-upload-wrap').bind('dragleave', function () {
+		$('.image-color-upload-wrap').removeClass('image-color-dropping');
 });
 
+function removeMaskImgUpload() {
+	$('.file-mask-upload-input').replaceWith($('.file-mask-upload-input').clone());
+	$('.file-mask-upload-content').hide();
+	$('.image-mask-upload-wrap').show();
+  }
+  $('.image-mask-upload-wrap').bind('dragover', function () {
+		  $('.image-mask-upload-wrap').addClass('image-mask-dropping');
+	  });
+	  $('.image-mask-upload-wrap').bind('dragleave', function () {
+		  $('.image-mask-upload-wrap').removeClass('image-mask-dropping');
+  });
 
 
-function changeUpload() {
+
+function changeColorImgUpload() {
 	const xhr = new XMLHttpRequest();
 	var formData = new FormData();
-	formData.append('convert_img', 'convert_img')
+	formData.append('convert_color_img', 'convert_color_img')
 	xhr.open("POST", '/', true);
 	xhr.send(formData);
 
 	setTimeout(function() {
-		document.querySelector('.file-upload-image').src = 'static/converted_img.jpg?' + new Date().getTime();
+		document.querySelector('.file-color-upload-image').src = 'static/converted_color_img.jpg?' + new Date().getTime();
 	}, 3000);
 }
+
+function changeMaskImgUpload() {
+	const xhr = new XMLHttpRequest();
+	var formData = new FormData();
+	formData.append('convert_mask_img', 'convert_mask_img')
+	xhr.open("POST", '/', true);
+	xhr.send(formData);
+
+	setTimeout(function() {
+		document.querySelector('.file-mask-upload-image').src = 'static/converted_mask_img.jpg?' + new Date().getTime();
+	}, 3000);
+}
+
+function uploadFiles() {
+	const fileInput = document.getElementById("fileInput");
+	const selectedFiles = fileInput.files;
+	// Check if any files are selected
+	if (selectedFiles.length === 0) {
+	  alert("Please select at least one file to upload.");
+	  return;
+	}
+	const formData = new FormData();
+	// Append each selected file to the FormData object
+	for (let i = 0; i < selectedFiles.length; i++) {
+		console.log(selectedFiles[i])
+		formData.append("files[]", selectedFiles[i]);
+	}
+	console.log([...formData])
+
+	const xhr = new XMLHttpRequest();
+	xhr.open("POST", "/", true);
+	console.log(xhr.status)
+	xhr.send(formData);
+	setTimeout(function() {
+		document.addEventListener("DOMContentLoaded", function() {
+			const imageGallery = document.getElementById("imageGallery");
+			const imagePath = 'static/uploads';
+			fetchImages(imagePath);
+			async function fetchImages(path) {
+				const response = await Response.json();
+				const data = await Response.json();
+				data.forEach(image => {
+					const imgElement = document.createElement("img");
+					imgElement.src = image;
+					imgElement.alt = "Gallery Image";
+					imageGallery.appendChild(imgElement);
+				});
+			}
+		});
+	}, 3000);
+}
+  
+
+

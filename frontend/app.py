@@ -1,18 +1,23 @@
 import base64
+import cgi
 import io
-from functools import lru_cache
+import urllib
 
-import cv2
 import numpy as np
-import torch
 from flask import Flask, render_template, request
 from PIL import Image
 from tritonclient.http import (InferenceServerClient, InferInput,
                                InferRequestedOutput)
+
+from functools import lru_cache
+
+import cv2
+import torch
 from gevent import monkey
 monkey.patch_all()
 
 app = Flask(__name__)
+app.config['UPLOADED_FILES'] = 'static/uploads'
 
 
 @lru_cache
@@ -68,8 +73,7 @@ def main_back(img_list):
     # res = cv2.cvtColor(res, cv2.COLOR_BGR2RGB) # photo
     
     return res
-
-
+  
 @app.after_request
 def add_header(r):
     """
@@ -83,17 +87,21 @@ def add_header(r):
     return r
 
 
-@app.route("/", methods=["GET", "POST"])
+@app.route('/', methods=['GET', 'POST'])
 def main():
-    data = {"converted_img": None}
-    if request.method == "POST":
-        if "img" in request.form:
-            img_data = base64.b64decode(request.form["img"].split(",")[1])
-            img = Image.open(io.BytesIO(img_data)).convert("RGB")
-            img.save("image.jpg")
-            data["converted_img"] = None
-        elif "convert_img" in request.form:
-            # img = np.array(Image.open("image.jpg"))
+    #data = {'converted_img': None}
+    if request.method == 'POST':
+        if 'color_img' in request.form:
+            img_data = base64.b64decode(request.form['color_img'].split(',')[1])
+            img = Image.open(io.BytesIO(img_data)).convert('RGB')
+            img.save('color_image.jpg')
+            
+        elif 'mask_img' in request.form:
+            img_data = base64.b64decode(request.form['mask_img'].split(',')[1])
+            img = Image.open(io.BytesIO(img_data)).convert('RGB')
+            img.save('mask_image.jpg')
+            
+        elif 'convert_color_img' in request.form:
             img = cv2.imread("image.jpg")
             old_img = img.copy()
             old_img = cv2.cvtColor(old_img, cv2.COLOR_BGR2RGB)
@@ -102,11 +110,7 @@ def main():
 
             img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
             img = cv2.resize(img, (512, 512))
-            #lisst, pad = img_to_list(img)
-            # ------- debug
-            #print(lisst.__len__())
-            #print(pad)
-            # -------
+            
             result = main_back(img)
             res_img = cv2.resize(result, inp_size[::-1])
             res_img = get_correction_mask(old_img, res_img.copy())# MASKS
@@ -117,12 +121,19 @@ def main():
             res_img = cv2.cvtColor(res_img, cv2.COLOR_RGB2BGR)
             
             cv2.imwrite("static/converted_img.jpg", res_img)
-            # Image.fromarray(res_img).save("static/converted_img.jpg")
-            data["converted_img"] = "static/converted_img.jpg"
+        elif 'convert_mask_img' in request.form:
+            img = np.array(Image.open('mask_image.jpg'))
+            res_img = np.hstack([img, img])
+            Image.fromarray(res_img).save('static/converted_mask_img.jpg')
+        else:
+            for i, file_storage in enumerate(request.files.getlist('files[]')):
+                Image.open(io.BytesIO(file_storage.read())).save(f'static/uploads/image_{i}.jpg')
 
-        print(data)
-    return render_template("index.html", flask_data=data)
+    return render_template('index.html')
 
 
-if __name__ == "__main__":
+def create_img_gallery(old_imgs, new_imgs):
+    pass
+
+if __name__ == '__main__':
     app.run(host="0.0.0.0", debug=True)
