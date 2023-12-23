@@ -6,44 +6,44 @@ input [
     {
         name: "input"
         data_type: TYPE_FP32
-        dims: [1, 3, 96, 128]
+        dims: [1, 3, 64, 64]
     },
     {
         name: "onnx::Add_1"
         data_type: TYPE_FP32
-        dims: [1,3,192,256]
+        dims: [1,3,128,128]
     },
     {
         name: "onnx::Add_2"
         data_type: TYPE_FP32
-        dims: [1,3,384,512]
+        dims: [1,3,256,256]
     },
     {
         name: "onnx::Add_3"
         data_type: TYPE_FP32
-        dims: [1,3,768,1024]
+        dims: [1,3,512,512]
     }
 ]
 output [
   {
     name: "output"
     data_type: TYPE_FP32
-    dims: [1,3,192,256]
+    dims: [1,3,128,128]
   },
   {
     name: "onnx::Add_872"
     data_type: TYPE_FP32
-    dims: [1,3,384,512]
+    dims: [1,3,256,256]
   },
   {
     name: "onnx::Add_1205"
     data_type: TYPE_FP32
-    dims: [1,3,768,1024]
+    dims: [1,3,512,512]
   },
   {
     name: "1467"
     data_type: TYPE_FP32
-    dims: [1,3,768,1024]
+    dims: [1,3,512,512]
   }
 ]
 
