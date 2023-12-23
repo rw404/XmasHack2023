@@ -1,0 +1,6 @@
+outs:
+- md5: 4f07dbe646b77aac9b77cf2792060a95
+  size: 203107
+  isexec: true
+  hash: md5
+  path: test.jpg

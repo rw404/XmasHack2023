@@ -406,7 +406,7 @@ function readColorImgURL(input) {
 
     var reader = new FileReader();
 
-	
+
     reader.onload = function(e) {
       $('.image-color-upload-wrap').hide();
 
@@ -511,8 +511,6 @@ function changeMaskImgUpload() {
 	}, 3000);
 }
 
-
-
 function uploadFiles() {
 	const fileInput = document.getElementById("fileInput");
 	const selectedFiles = fileInput.files;
@@ -554,4 +552,3 @@ function uploadFiles() {
   
 
 
-  
