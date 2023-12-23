@@ -3,7 +3,8 @@ from functools import lru_cache
 import cv2
 import numpy as np
 import torch
-from tritonclient.http import InferenceServerClient, InferInput, InferRequestedOutput
+from tritonclient.http import (InferenceServerClient, InferInput,
+                               InferRequestedOutput)
 
 
 @lru_cache

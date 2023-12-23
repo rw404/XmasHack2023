@@ -406,7 +406,7 @@ function readURL(input) {
 
     var reader = new FileReader();
 
-	
+
     reader.onload = function(e) {
       $('.image-upload-wrap').hide();
 
@@ -459,6 +459,3 @@ function changeUpload() {
 		image.src = 'static/converted_img.jpg'
 	}, 3000);
 }
-
-
-

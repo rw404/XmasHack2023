@@ -10,6 +10,10 @@ readme = "README.md"
 python = "^3.10"
 dvc = {extras = ["gdrive"], version = "^3.36.0"}
 tritonclient = {extras = ["all"], version = "^2.41.0"}
+flask = "^3.0.0"
+torch = "^2.1.2"
+numpy = "^1.26.2"
+pillow = "^10.1.0"
 
 
 [build-system]

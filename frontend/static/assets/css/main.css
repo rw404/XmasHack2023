@@ -1889,7 +1889,7 @@ input, select, textarea {
 	}
 }
 
-  
+
   .file-upload {
 	background-color: #201d1d;
 	width: 600px;
@@ -1897,7 +1897,7 @@ input, select, textarea {
 	margin: 0 auto;
 	padding: 10px;
   }
-  
+
   .file-upload-btn {
 	width: 100%;
 	margin: 0;
@@ -1916,26 +1916,26 @@ input, select, textarea {
 			0px 4px 8px rgba(0, 255, 255, 0.5),
 			0px 8px 16px rgba(0, 255, 255, 0.5);
   }
-  
+
   .file-upload-btn:hover {
 	background: #113641;
 	color: #ffffff;
 	transition: all .2s ease;
 	cursor: pointer;
   }
-  
+
   .file-upload-btn:active {
 	border: 0;
 	transition: all .2s ease;
   }
-  
+
   .file-upload-content {
 	display: none;
 	margin: auto;
 	text-align: center;
 	padding: 70px 0;
   }
-  
+
   .file-upload-input {
 	position: absolute;
 	margin: 0;
@@ -1946,28 +1946,28 @@ input, select, textarea {
 	opacity: 0;
 	cursor: pointer;
   }
-  
+
   .image-upload-wrap {
 	margin-top: 20px;
 	border: 6px dashed #74bdcd;
 	position: relative;
   }
-  
+
   .image-dropping,
   .image-upload-wrap:hover {
 	background-color: #113641;
 	border: 6px dashed #74bdcd;
   }
-  
+
   .image-title-wrap {
 	padding: 0 15px 15px 15px;
 	color: #74bdcd;
   }
-  
+
   .drag-text {
 	text-align: center;
   }
-  
+
   .drag-text h3 {
 	font-weight: 100;
 	font-size: x-large;
@@ -1975,14 +1975,14 @@ input, select, textarea {
 	color: #ffffff;
 	padding: 60px 0;
   }
-  
+
   .file-upload-image {
 	width: 100%;
 	height: 100%;
 	margin: auto;
 	padding: 20px;
   }
-  
+
   .remove-image {
 	width: 400px;
 	margin: 0;
@@ -2001,14 +2001,14 @@ input, select, textarea {
 			0px 4px 8px rgba(0, 255, 255, 0.5),
 			0px 8px 16px rgba(0, 255, 255, 0.5);
   }
-  
+
   .remove-image:hover {
 	background: #74bdcd;
 	color: #ffffff;
 	transition: all .2s ease;
 	cursor: pointer;
   }
-  
+
   .remove-image:active {
 	border: 0;
 	transition: all .2s ease;
