@@ -1,3 +1,3 @@
-FROM nvcr.io/nvidia/tritonserver:23.04-py3
+FROM nvcr.io/nvidia/tritonserver:22.09-py3
 
 ENTRYPOINT [ "tritonserver" ]
