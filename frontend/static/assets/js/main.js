@@ -425,7 +425,6 @@ function readURL(input) {
 		xhr.open("POST", '/', true);
 		xhr.send(formData);
 	  };
-
   } else {
     removeUpload();
   }
@@ -455,7 +454,6 @@ function changeUpload() {
 	xhr.send(formData);
 
 	setTimeout(function() {
-		var image = document.querySelector('.file-upload-image');
-		image.src = 'static/converted_img.jpg'
+		document.querySelector('.file-upload-image').src = 'static/converted_img.jpg?' + new Date().getTime();
 	}, 3000);
 }
