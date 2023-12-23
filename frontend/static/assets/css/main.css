@@ -1298,7 +1298,7 @@ input, select, textarea {
 			line-height: 7.5rem;
 			border: solid 1px #ffffff;
 			border-radius: 100%;
-			box-shadow: 0 0 16px #13af3a, inset 0 0 8px #3ae96f;
+			box-shadow: 0 0 16px #05bbe3, inset 0 0 8px #06ddf0;
 		}
 
 			#header .logo .icon:before {
@@ -1893,8 +1893,9 @@ input, select, textarea {
   .file-upload {
 	background-color: #201d1d;
 	width: 600px;
+	height: 100%;
 	margin: 0 auto;
-	padding: 20px;
+	padding: 10px;
   }
   
   .file-upload-btn {
@@ -1917,7 +1918,7 @@ input, select, textarea {
   }
   
   .file-upload-btn:hover {
-	background: #74bdcd;
+	background: #113641;
 	color: #ffffff;
 	transition: all .2s ease;
 	cursor: pointer;
@@ -1930,7 +1931,9 @@ input, select, textarea {
   
   .file-upload-content {
 	display: none;
+	margin: auto;
 	text-align: center;
+	padding: 70px 0;
   }
   
   .file-upload-input {
@@ -1946,19 +1949,19 @@ input, select, textarea {
   
   .image-upload-wrap {
 	margin-top: 20px;
-	border: 4px dashed #74bdcd;
+	border: 6px dashed #74bdcd;
 	position: relative;
   }
   
   .image-dropping,
   .image-upload-wrap:hover {
-	background-color: #74bdcd;
-	border: 4px dashed #ffffff;
+	background-color: #113641;
+	border: 6px dashed #74bdcd;
   }
   
   .image-title-wrap {
 	padding: 0 15px 15px 15px;
-	color: #222;
+	color: #74bdcd;
   }
   
   .drag-text {
@@ -1967,35 +1970,40 @@ input, select, textarea {
   
   .drag-text h3 {
 	font-weight: 100;
+	font-size: x-large;
 	text-transform: uppercase;
-	color: #74bdcd;
+	color: #ffffff;
 	padding: 60px 0;
   }
   
   .file-upload-image {
-	max-height: 200px;
-	max-width: 200px;
+	width: 100%;
+	height: 100%;
 	margin: auto;
 	padding: 20px;
   }
   
   .remove-image {
-	width: 200px;
+	width: 400px;
 	margin: 0;
 	color: #fff;
-	background: #cd4535;
+	background: #74bdcd;
 	border: none;
 	padding: 10px;
 	border-radius: 4px;
-	border-bottom: 4px solid #b02818;
+	border-bottom: 4px solid #74bdcd;
 	transition: all .2s ease;
 	outline: none;
 	text-transform: uppercase;
 	font-weight: 700;
+	box-shadow: 0px 1px 2px rgba(0, 255, 255, 0.5),
+			0px 2px 4px rgba(0, 255, 255, 0.5),
+			0px 4px 8px rgba(0, 255, 255, 0.5),
+			0px 8px 16px rgba(0, 255, 255, 0.5);
   }
   
   .remove-image:hover {
-	background: #c13b2a;
+	background: #74bdcd;
 	color: #ffffff;
 	transition: all .2s ease;
 	cursor: pointer;

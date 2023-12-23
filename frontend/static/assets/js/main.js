@@ -402,35 +402,63 @@
 
 
 function readURL(input) {
-	if (input.files && input.files[0]) {
-  
-	  var reader = new FileReader();
-  
-	  reader.onload = function(e) {
-		$('.image-upload-wrap').hide();
-  
-		$('.file-upload-image').attr('src', e.target.result);
-		$('.file-upload-content').show();
-  
-		$('.image-title').html(input.files[0].name);
+  if (input.files && input.files[0]) {
+
+    var reader = new FileReader();
+
+	
+    reader.onload = function(e) {
+      $('.image-upload-wrap').hide();
+
+      $('.file-upload-image').attr('src', e.target.result);
+      $('.file-upload-content').show();
+
+      $('.image-title').html(input.files[0].name);
+    };
+
+    reader.readAsDataURL(input.files[0])
+
+	reader.onloadend = function() {
+		const xhr = new XMLHttpRequest();
+		var formData = new FormData();
+		formData.append('img', reader.result)
+		xhr.open("POST", '/', true);
+		xhr.send(formData);
 	  };
-  
-	  reader.readAsDataURL(input.files[0]);
-  
-	} else {
-	  removeUpload();
-	}
+
+  } else {
+    removeUpload();
   }
-  
+}
+
+
+
 function removeUpload() {
-	$('.file-upload-input').replaceWith($('.file-upload-input').clone());
-	$('.file-upload-content').hide();
-	$('.image-upload-wrap').show();
-  }
-  $('.image-upload-wrap').bind('dragover', function () {
-		  $('.image-upload-wrap').addClass('image-dropping');
-	  });
-	  $('.image-upload-wrap').bind('dragleave', function () {
-		  $('.image-upload-wrap').removeClass('image-dropping');
-  });
-  
+  $('.file-upload-input').replaceWith($('.file-upload-input').clone());
+  $('.file-upload-content').hide();
+  $('.image-upload-wrap').show();
+}
+$('.image-upload-wrap').bind('dragover', function () {
+		$('.image-upload-wrap').addClass('image-dropping');
+	});
+	$('.image-upload-wrap').bind('dragleave', function () {
+		$('.image-upload-wrap').removeClass('image-dropping');
+});
+
+
+
+function changeUpload() {
+	const xhr = new XMLHttpRequest();
+	var formData = new FormData();
+	formData.append('convert_img', 'convert_img')
+	xhr.open("POST", '/', true);
+	xhr.send(formData);
+
+	setTimeout(function() {
+		var image = document.querySelector('.file-upload-image');
+		image.src = 'static/converted_img.jpg'
+	}, 3000);
+}
+
+
+
