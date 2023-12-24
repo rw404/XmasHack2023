@@ -1367,7 +1367,7 @@ input, select, textarea {
 				#header nav ul li a {
 					display: block;
 					min-width: 7.5rem;
-					height: 2.75rem;
+					min-height: 2.75rem;
 					line-height: 2.75rem;
 					padding: 0 1.25rem 0 1.45rem;
 					text-transform: uppercase;
@@ -1497,8 +1497,8 @@ input, select, textarea {
 						}
 
 						#header nav ul li a {
-							height: 3rem;
-							line-height: 3rem;
+							height: 6rem;
+							line-height: 6rem;
 							min-width: 0;
 							width: 100%;
 						}
@@ -1686,24 +1686,26 @@ input, select, textarea {
 	border: 0.15em solid var(--glow-color);
 	border-radius: 0.45em;
 	background: none;
-	perspective: 2em;
+	perspective: 1.5em;
 	font-family: "Raleway", sans-serif;
-	font-size: 2em;
+	font-size: 1.5em;
 	font-weight: 900;
 	letter-spacing: 1em;
+	width: 100%;
 
 	-webkit-box-shadow: inset 0px 0px 0.5em 0px var(--glow-color),
 		0px 0px 0.5em 0px var(--glow-color);
 	-moz-box-shadow: inset 0px 0px 0.5em 0px var(--glow-color),
 		0px 0px 0.5em 0px var(--glow-color);
-	box-shadow: inset 0px 0px 0.5em 0px var(--glow-color),
+	box-shadow: inset 0px 0px 0.5em 0px var(--glow-color)
 		0px 0px 0.5em 0px var(--glow-color);
 	animation: border-flicker 6s linear infinite;
 }
 
 .glowing-txt {
-	float: left;
 	margin-right: -0.8em;
+	width: auto;
+	text-align: center;
 	-webkit-text-shadow: 0 0 0.125em hsl(0 0% 100% / 0.3),
 		0 0 0.45em var(--glow-color);
 	-moz-text-shadow: 0 0 0.125em hsl(0 0% 100% / 0.3),
@@ -1905,7 +1907,7 @@ input, select, textarea {
 	color: #fff;
 	background: #353736;
 	border: none;
-	padding: 10px;
+	padding-bottom: 2em;
 	border-radius: 4px;
 	border-bottom: 4px solid #ffffff;
 	transition: all .2s ease;
@@ -2032,7 +2034,7 @@ input, select, textarea {
 	color: #fff;
 	background: #353736;
 	border: none;
-	padding: 10px;
+	padding-bottom: 2em;
 	border-radius: 4px;
 	border-bottom: 4px solid #ffffff;
 	transition: all .2s ease;
@@ -2162,11 +2164,6 @@ input, select, textarea {
 
 .file-gallery-images {
 	width: 100%;
-	height: 100%;
 	margin: auto;
-	padding: 20px;
-	box-shadow: 0px 1px 2px rgba(0, 255, 255, 0.5),
-			0px 2px 4px rgba(0, 255, 255, 0.5),
-			0px 4px 8px rgba(0, 255, 255, 0.5),
-			0px 8px 16px rgba(0, 255, 255, 0.5);
+	padding: 40px;
   }

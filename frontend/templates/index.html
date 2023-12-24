@@ -6,7 +6,7 @@
 -->
 <html>
 	<head>
-		<title>Dimension by HTML5 UP</title>
+		<title>Цветокоррекция на базе ИИ</title>
 		<meta charset="utf-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
 		<link rel="stylesheet" href="../static/assets/css/main.css" />
@@ -24,15 +24,15 @@
 						</div>
 						<div class="content">
 							<div class="inner">
-								<h1>Macrame Club</h1>
-								<p>Image quality enhancement</p>
+								<h1>Цветокоррекция на базе ИИ</h1>
+								<p>Кружок Макраме</p>
 							</div>
 						</div>
 						<nav>
 							<ul>
-								<li><a href="#ImageColor">Image Color</a></li>
-								<li><a href="#ColorStandartization">Color Standartization</a></li>
-								<li><a href="#ImageMasks">Image Masks</a></li>
+								<li><a href="#ImageColor">Цветокоррекция</a></li>
+								<li><a href="#ColorStandartization">Выравнивание цветов</a></li>
+								<li><a href="#ImageMasks">Сегментация артефактов</a></li>
 							</ul>
 						</nav>
 					</header>
@@ -42,25 +42,25 @@
 
 						<!-- Color Image -->
 							<article id="ImageColor">
-								<h2 class="major">Image change color</h2>
+								<h2 class="major" style="margin: auto; padding-bottom: 1.5rem;">Цветокоррекция</h2>
 								<div class="file-color-upload">
-									<button class="file-color-upload-btn" type="button" onclick="$('.file-color-upload-input').trigger( 'click' )">Add Image</button>
+									<button class="file-color-upload-btn" type="button" onclick="$('.file-color-upload-input').trigger( 'click' )">Добавить изображение</button>
 								  
 									<div class="image-color-upload-wrap">
 									  <input class="file-color-upload-input" type='file' onchange="readColorImgURL(this);" accept="image/*" name='img'/>
 									  <div class="drag-color-text">
-										<h3>Drag and drop a file or select add Image</h3>
+										<h3>Выберите файл и подгрузите изображение</h3>
 									  </div>
 									</div>
 									<div class="file-color-upload-content">
 									  <img class="file-color-upload-image" src="color_image.jpg" alt="change color image"/>
 
 									  <div class="image-color-title-wrap">
-										<button type="button" onclick="removeColorImgUpload()" class="remove-color-image">Remove Uploaded Image</span></button>
+										<button type="button" onclick="removeColorImgUpload()" class="remove-color-image">Удалить изображение</span></button>
 									  </div> 
 
 									  <div class="image-color-change-wrap" style="text-align: center; margin-bottom: 2em; margin-top: 2em;">
-										<button class='glowing-btn' type="button" onclick="changeColorImgUpload();" ><span class='glowing-txt'>CO<span class='faulty-letter'>N</span>VERT</span></button>
+										<button class='glowing-btn' type="button" onclick="changeColorImgUpload();" ><span class='glowing-txt'>ПРИ<span class='faulty-letter'>М</span>ЕНИТЬ</span></button>
 									  </div>
 									  
 									</div>
@@ -71,25 +71,25 @@
 
 						<!-- Mask Image -->
 							<article id="ImageMasks">
-								<h2 class="major">Image draw lightening and darkening masks</h2>
+								<h2 class="major" style="margin: auto; padding-bottom: 1.5rem;">Сегментация артефактов</h2>
 								<div class="file-mask-upload">
-									<button class="file-mask-upload-btn" type="button" onclick="$('.file-mask-upload-input').trigger( 'click' )">Add Image</button>
+									<button class="file-mask-upload-btn" type="button" onclick="$('.file-mask-upload-input').trigger( 'click' )">Добавить изображение</button>
 								  
 									<div class="image-mask-upload-wrap">
 									  <input class="file-mask-upload-input" type='file' onchange="readMaskImgURL(this);" accept="image/*" name='img'/>
 									  <div class="drag-mask-text">
-										<h3>Drag and drop a file or select add Image</h3>
+										<h3>Выберите файл и подгрузите изображение</h3>
 									  </div>
 									</div>
 									<div class="file-mask-upload-content">
 									  <img class="file-mask-upload-image" src="mask_image.jpg" alt="mask image"/>
 
 									  <div class="image-mask-title-wrap">
-										<button type="button" onclick="removeMaskImgUpload()" class="remove-mask-image">Remove Uploaded Image</span></button>
+										<button type="button" onclick="removeMaskImgUpload()" class="remove-mask-image">Удалить изображение</span></button>
 									  </div> 
 
 									  <div class="image-mask-change-wrap" style="text-align: center; margin-bottom: 2em; margin-top: 2em;">
-										<button class='glowing-btn' type="button" onclick="changeMaskImgUpload();" ><span class='glowing-txt'>CO<span class='faulty-letter'>N</span>VERT</span></button>
+										<button class='glowing-btn' type="button" onclick="changeMaskImgUpload();" ><span class='glowing-txt'>ПРИ<span class='faulty-letter'>М</span>ЕНИТЬ</span></button>
 									  </div>
 									  
 									</div>
@@ -98,15 +98,15 @@
 							</article>
 
 							<article id="ColorStandartization">
-								<h2 class="major">Image change color</h2>
+								<h2 class="major" style="margin: auto; padding-bottom: 1.5rem;">Выравнивание цветов</h2>
 								<div class="image-bottom-upload">
 									<label for="fileInput" class="custom-file-upload">
 										<input type="file" id="fileInput" name="files[]" style="display: none; text-align: center;" multiple accept="image/*"/>
-										Upload Multiple Images
+										Выберите несколько изображений
 									</label>
 									<div class="wrap-glowing-btn" style="text-align: center; margin-bottom: 2em; margin-top: 2em; margin: auto;"></div>
 									 <img class="file-gallery-images" src="static/images/bg1.jpg" alt="plane image"/>
-									 <button class='glowing-btn' type="button" onclick="uploadFiles();" ><span class='glowing-txt'>CO<span class='faulty-letter'>N</span>VERT</span></button>
+									 <button class='glowing-btn' type="button" onclick="uploadFiles();" ><span class='glowing-txt'>ПРИ<span class='faulty-letter'>М</span>ЕНИТЬ</span></button>
 									 <div id="imageGallery"></div>
 									</div>
 
