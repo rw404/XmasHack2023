@@ -2,13 +2,18 @@
 
 ## Установка
 
-Проверка работоспособности проверялась на сервере [Selectel](https://selectel.ru)(__Собран с использованием OS Ubuntu 22.04 Machine learning, видеокарта А2, 100-150ГБ SSD__).
+Проверка работоспособности проверялась на сервере
+[Selectel](https://selectel.ru)(**Собран с использованием OS Ubuntu 22.04
+Machine learning, видеокарта А2, 100-150ГБ SSD**).
 
 Для сборки проекта(запуска сервера) использовались:
-- poetry - установка по [ссылке](https://python-poetry.org/docs/#installing-with-the-official-installer);
+
+- poetry - установка по
+  [ссылке](https://python-poetry.org/docs/#installing-with-the-official-installer);
 - docker, docker-compose
 - triton
-- __Расчитывается на cuda 11.8__, иначе сборка тритон-сервера может не обнаружить GPU.
+- **Расчитывается на cuda 11.8**, иначе сборка тритон-сервера может не
+  обнаружить GPU.
 
 ### Настройка окружения
 
@@ -27,7 +32,9 @@ docker-compose build
 docker-compose up
 ```
 
-После этого должен запуститься сервер, и если нет ошибок вида `error 1`, а видно следующий вывод:
+После этого должен запуститься сервер, и если нет ошибок вида `error 1`, а видно
+следующий вывод:
+
 ```bash
 Started GRPCInferenceService at 0.0.0.0:8001
 Started HTTPService at 0.0.0.0:8000
@@ -45,7 +52,8 @@ cd frontend
 poetry run python3 app.py
 ```
 
-Должно отобразиться 
+Должно отобразиться
+
 ```bash
  * Serving Flask app 'app'
  * Debug mode: on
@@ -59,7 +67,8 @@ Press CTRL+C to quit
  * Debugger PIN: 109-172-851
 ```
 
-Теперь к сервису можно приходить по адресу `localhost:5000` или `public_ip:5000`, если сервер имеет доступ в общий интернет.
+Теперь к сервису можно приходить по адресу `localhost:5000` или
+`public_ip:5000`, если сервер имеет доступ в общий интернет.
 
 # Пример экранов
 
