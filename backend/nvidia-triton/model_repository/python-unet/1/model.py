@@ -1,28 +1,48 @@
 import numpy as np
 import torch
-import triton_python_backend_utils as pb_utils
-
-import numpy as np
-import torch
 import torch.nn as nn
 import torch.nn.functional as F
+import triton_python_backend_utils as pb_utils
 from torch.autograd import Function
 from torchvision.transforms.functional import to_tensor
 
 
 class ConvBlock(nn.Module):
-    def __init__(self, inc, outc, kernel_size=3, padding=1, stride=1, use_bias=True, activation=nn.ReLU,
-                 batch_norm=False):
+    def __init__(
+        self,
+        inc,
+        outc,
+        kernel_size=3,
+        padding=1,
+        stride=1,
+        use_bias=True,
+        activation=nn.ReLU,
+        batch_norm=False,
+    ):
         super(ConvBlock, self).__init__()
-        conv_type = OPT['conv_type']
-        if conv_type == 'conv':
-            self.conv = nn.Conv2d(int(inc), int(
-                outc), kernel_size, padding=padding, stride=stride, bias=use_bias)
-        elif conv_type.startswith('drconv'):
-            region_num = int(conv_type.replace('drconv', ''))
-            self.conv = DRConv2d(int(inc), int(outc), kernel_size, region_num=region_num, padding=padding,
-                                 stride=stride)
-            print(f'[ WARN ] Using DRconv2d(n_region={region_num}) instead of Conv2d in BilateralUpsampleNet.')
+        conv_type = OPT["conv_type"]
+        if conv_type == "conv":
+            self.conv = nn.Conv2d(
+                int(inc),
+                int(outc),
+                kernel_size,
+                padding=padding,
+                stride=stride,
+                bias=use_bias,
+            )
+        elif conv_type.startswith("drconv"):
+            region_num = int(conv_type.replace("drconv", ""))
+            self.conv = DRConv2d(
+                int(inc),
+                int(outc),
+                kernel_size,
+                region_num=region_num,
+                padding=padding,
+                stride=stride,
+            )
+            print(
+                f"[ WARN ] Using DRconv2d(n_region={region_num}) instead of Conv2d in BilateralUpsampleNet."
+            )
         else:
             raise NotImplementedError()
 
@@ -63,16 +83,17 @@ class SliceNode(nn.Module):
         # bilateral_grid shape: Nx12x8x16x16
         device = bilateral_grid.get_device()
         N, _, H, W = guidemap.shape
-        hg, wg = torch.meshgrid(
-            [torch.arange(0, H), torch.arange(0, W)])  # [0,511] HxW
+        hg, wg = torch.meshgrid([torch.arange(0, H), torch.arange(0, W)])  # [0,511] HxW
         if device >= 0:
             hg = hg.to(device)
             wg = wg.to(device)
 
-        hg = hg.float().repeat(N, 1, 1).unsqueeze(
-            3) / (H - 1) * 2 - 1  # norm to [-1,1] NxHxWx1
-        wg = wg.float().repeat(N, 1, 1).unsqueeze(
-            3) / (W - 1) * 2 - 1  # norm to [-1,1] NxHxWx1
+        hg = (
+            hg.float().repeat(N, 1, 1).unsqueeze(3) / (H - 1) * 2 - 1
+        )  # norm to [-1,1] NxHxWx1
+        wg = (
+            wg.float().repeat(N, 1, 1).unsqueeze(3) / (W - 1) * 2 - 1
+        )  # norm to [-1,1] NxHxWx1
         guidemap = guidemap * 2 - 1
         guidemap = guidemap.permute(0, 2, 3, 1).contiguous()
         guidemap_guide = torch.cat([wg, hg, guidemap], dim=3).unsqueeze(1)
@@ -94,8 +115,9 @@ class SliceNode(nn.Module):
         # Force them have the same type for fp16 training :
         guidemap_guide = guidemap_guide.type_as(bilateral_grid)
         # bilateral_grid = bilateral_grid.type_as(guidemap_guide)
-        coeff = F.grid_sample(bilateral_grid, guidemap_guide,
-                              'bilinear', align_corners=True)
+        coeff = F.grid_sample(
+            bilateral_grid, guidemap_guide, "bilinear", align_corners=True
+        )
         return coeff.squeeze(2)
 
 
@@ -104,20 +126,26 @@ class ApplyCoeffs(nn.Module):
         super(ApplyCoeffs, self).__init__()
 
     def forward(self, coeff, full_res_input):
-        '''
+        """
         coeff shape: [bs, 12, h, w]
         input shape: [bs, 3, h, w]
             Affine:
             r = a11*r + a12*g + a13*b + a14
             g = a21*r + a22*g + a23*b + a24
             ...
-        '''
-        R = torch.sum(
-            full_res_input * coeff[:, 0:3, :, :], dim=1, keepdim=True) + coeff[:, 3:4, :, :]
-        G = torch.sum(
-            full_res_input * coeff[:, 4:7, :, :], dim=1, keepdim=True) + coeff[:, 7:8, :, :]
-        B = torch.sum(
-            full_res_input * coeff[:, 8:11, :, :], dim=1, keepdim=True) + coeff[:, 11:12, :, :]
+        """
+        R = (
+            torch.sum(full_res_input * coeff[:, 0:3, :, :], dim=1, keepdim=True)
+            + coeff[:, 3:4, :, :]
+        )
+        G = (
+            torch.sum(full_res_input * coeff[:, 4:7, :, :], dim=1, keepdim=True)
+            + coeff[:, 7:8, :, :]
+        )
+        B = (
+            torch.sum(full_res_input * coeff[:, 8:11, :, :], dim=1, keepdim=True)
+            + coeff[:, 11:12, :, :]
+        )
 
         return torch.cat([R, G, B], dim=1)
 
@@ -125,13 +153,13 @@ class ApplyCoeffs(nn.Module):
 class ApplyCoeffsGamma(nn.Module):
     def __init__(self):
         super(ApplyCoeffsGamma, self).__init__()
-        print('[ WARN ] Use alter methods indtead of affine matrix.')
+        print("[ WARN ] Use alter methods indtead of affine matrix.")
 
     def forward(self, x_r, x):
-        '''
+        """
         coeff shape: [bs, 12, h, w]
         apply zeroDCE curve.
-        '''
+        """
 
         # [ 008 ] single iteration alpha map:
         # coeff channel num: 3
@@ -144,8 +172,7 @@ class ApplyCoeffsGamma(nn.Module):
         x = x + r2 * (torch.pow(x, 2) - x)
         x = x + r3 * (torch.pow(x, 2) - x)
         enhance_image_1 = x + r4 * (torch.pow(x, 2) - x)
-        x = enhance_image_1 + r5 * \
-            (torch.pow(enhance_image_1, 2) - enhance_image_1)
+        x = enhance_image_1 + r5 * (torch.pow(enhance_image_1, 2) - enhance_image_1)
         x = x + r6 * (torch.pow(x, 2) - x)
         x = x + r7 * (torch.pow(x, 2) - x)
         enhance_image = x + r8 * (torch.pow(x, 2) - x)
@@ -165,13 +192,13 @@ class ApplyCoeffsGamma(nn.Module):
 class ApplyCoeffsRetinex(nn.Module):
     def __init__(self):
         super().__init__()
-        print('[ WARN ] Use alter methods indtead of affine matrix.')
+        print("[ WARN ] Use alter methods indtead of affine matrix.")
 
     def forward(self, x_r, x):
-        '''
+        """
         coeff shape: [bs, 12, h, w]
         apply division of illumap.
-        '''
+        """
 
         # [ 014 ] use illu map:
         # coeff channel num: 3
@@ -182,10 +209,10 @@ class GuideNet(nn.Module):
     def __init__(self, params=None, out_channel=1):
         super(GuideNet, self).__init__()
         self.params = params
-        self.conv1 = ConvBlock(3, 16, kernel_size=1,
-                               padding=0, batch_norm=True)
+        self.conv1 = ConvBlock(3, 16, kernel_size=1, padding=0, batch_norm=True)
         self.conv2 = ConvBlock(
-            16, out_channel, kernel_size=1, padding=0, activation=nn.Sigmoid)  # nn.Tanh
+            16, out_channel, kernel_size=1, padding=0, activation=nn.Sigmoid
+        )  # nn.Tanh
 
     def forward(self, x):
         return self.conv2(self.conv1(x))  # .squeeze(1)
@@ -212,8 +239,9 @@ class LowResNet(nn.Module):
         for i in range(n_layers_splat):
             use_bn = bn if i > 0 else False
             self.splat_features.append(
-                ConvBlock(prev_ch, cm * (2 ** i) * lb, 3, stride=2, batch_norm=use_bn))
-            prev_ch = splat_ch = cm * (2 ** i) * lb
+                ConvBlock(prev_ch, cm * (2**i) * lb, 3, stride=2, batch_norm=use_bn)
+            )
+            prev_ch = splat_ch = cm * (2**i) * lb
 
         # global features
         n_layers_global = int(np.log2(sb / 4))
@@ -222,28 +250,29 @@ class LowResNet(nn.Module):
         self.global_features_fc = nn.ModuleList()
         for i in range(n_layers_global):
             self.global_features_conv.append(
-                ConvBlock(prev_ch, cm * 8 * lb, 3, stride=2, batch_norm=bn))
+                ConvBlock(prev_ch, cm * 8 * lb, 3, stride=2, batch_norm=bn)
+            )
             prev_ch = cm * 8 * lb
 
         n_total = n_layers_splat + n_layers_global
-        prev_ch = prev_ch * (nsize / 2 ** n_total) ** 2
+        prev_ch = prev_ch * (nsize / 2**n_total) ** 2
+        self.global_features_fc.append(FC(prev_ch, 32 * cm * lb, batch_norm=bn))
+        self.global_features_fc.append(FC(32 * cm * lb, 16 * cm * lb, batch_norm=bn))
         self.global_features_fc.append(
-            FC(prev_ch, 32 * cm * lb, batch_norm=bn))
-        self.global_features_fc.append(
-            FC(32 * cm * lb, 16 * cm * lb, batch_norm=bn))
-        self.global_features_fc.append(
-            FC(16 * cm * lb, 8 * cm * lb, activation=None, batch_norm=bn))
+            FC(16 * cm * lb, 8 * cm * lb, activation=None, batch_norm=bn)
+        )
 
         # local features
         self.local_features = nn.ModuleList()
+        self.local_features.append(ConvBlock(splat_ch, 8 * cm * lb, 3, batch_norm=bn))
         self.local_features.append(
-            ConvBlock(splat_ch, 8 * cm * lb, 3, batch_norm=bn))
-        self.local_features.append(
-            ConvBlock(8 * cm * lb, 8 * cm * lb, 3, activation=None, use_bias=False))
+            ConvBlock(8 * cm * lb, 8 * cm * lb, 3, activation=None, use_bias=False)
+        )
 
         # predicton
         self.conv_out = ConvBlock(
-            8 * cm * lb, lb * coeff_dim, 1, padding=0, activation=None)
+            8 * cm * lb, lb * coeff_dim, 1, padding=0, activation=None
+        )
 
     def forward(self, lowres_input):
         params = self.params
@@ -291,25 +320,39 @@ class DRDoubleConv(nn.Module):
             mid_channels = out_channels
 
         self.double_conv = nn.Sequential(
-            DRConv2d(in_channels, mid_channels, kernel_size=3,
-                     region_num=REGION_NUM_, padding=1, **kargs),
+            DRConv2d(
+                in_channels,
+                mid_channels,
+                kernel_size=3,
+                region_num=REGION_NUM_,
+                padding=1,
+                **kargs,
+            ),
             nn.BatchNorm2d(mid_channels),
             nn.ReLU(inplace=True),
-            DRConv2d(mid_channels, out_channels, kernel_size=3,
-                     region_num=REGION_NUM_, padding=1, **kargs),
+            DRConv2d(
+                mid_channels,
+                out_channels,
+                kernel_size=3,
+                region_num=REGION_NUM_,
+                padding=1,
+                **kargs,
+            ),
             nn.BatchNorm2d(out_channels),
-            nn.ReLU(inplace=True)
+            nn.ReLU(inplace=True),
         )
         assert len(DRCONV_POSITION_) == 2
         assert DRCONV_POSITION_[0] or DRCONV_POSITION_[1]
         if DRCONV_POSITION_[0] == 0:
-            print('[ WARN ] Use Conv in DRDoubleConv[0] instead of DRconv.')
+            print("[ WARN ] Use Conv in DRDoubleConv[0] instead of DRconv.")
             self.double_conv[0] = nn.Conv2d(
-                in_channels, mid_channels, kernel_size=3, padding=1)
+                in_channels, mid_channels, kernel_size=3, padding=1
+            )
         if DRCONV_POSITION_[1] == 0:
-            print('[ WARN ] Use Conv in DRDoubleConv[3] instead of DRconv.')
+            print("[ WARN ] Use Conv in DRDoubleConv[3] instead of DRconv.")
             self.double_conv[3] = nn.Conv2d(
-                mid_channels, out_channels, kernel_size=3, padding=1)
+                mid_channels, out_channels, kernel_size=3, padding=1
+            )
 
     def forward(self, x):
         res = self.double_conv(x)
@@ -327,17 +370,13 @@ class HistDRDoubleConv(nn.Module):
         if not mid_channels:
             mid_channels = out_channels
         self.conv1 = HistDRConv2d(
-            in_channels, mid_channels, kernel_size=3, region_num=REGION_NUM_, padding=1)
-        self.inter1 = nn.Sequential(
-            nn.BatchNorm2d(mid_channels),
-            nn.ReLU(inplace=True)
+            in_channels, mid_channels, kernel_size=3, region_num=REGION_NUM_, padding=1
         )
+        self.inter1 = nn.Sequential(nn.BatchNorm2d(mid_channels), nn.ReLU(inplace=True))
         self.conv2 = HistDRConv2d(
-            mid_channels, out_channels, kernel_size=3, region_num=REGION_NUM_, padding=1)
-        self.inter2 = nn.Sequential(
-            nn.BatchNorm2d(out_channels),
-            nn.ReLU(inplace=True)
+            mid_channels, out_channels, kernel_size=3, region_num=REGION_NUM_, padding=1
         )
+        self.inter2 = nn.Sequential(nn.BatchNorm2d(out_channels), nn.ReLU(inplace=True))
 
     def forward(self, x, histmap):
         y = self.conv1(x, histmap)
@@ -356,28 +395,32 @@ class HistGuidedDRDoubleConv(nn.Module):
             mid_channels = out_channels
         if DRCONV_POSITION_[0]:
             self.conv1 = DRConv2d(
-                in_channels, mid_channels, kernel_size=3, region_num=REGION_NUM_, padding=1, **kargs)
+                in_channels,
+                mid_channels,
+                kernel_size=3,
+                region_num=REGION_NUM_,
+                padding=1,
+                **kargs,
+            )
         else:
-            print('[ WARN ] Use Conv in HistGuidedDRDoubleConv[0] instead of DRconv.')
-            self.conv1 = nn.Conv2d(
-                in_channels, mid_channels, kernel_size=3, padding=1)
+            print("[ WARN ] Use Conv in HistGuidedDRDoubleConv[0] instead of DRconv.")
+            self.conv1 = nn.Conv2d(in_channels, mid_channels, kernel_size=3, padding=1)
 
-        self.inter1 = nn.Sequential(
-            nn.BatchNorm2d(mid_channels),
-            nn.ReLU(inplace=True)
-        )
+        self.inter1 = nn.Sequential(nn.BatchNorm2d(mid_channels), nn.ReLU(inplace=True))
         if DRCONV_POSITION_[1]:
             self.conv2 = DRConv2d(
-                mid_channels, out_channels, kernel_size=3, region_num=REGION_NUM_, padding=1, **kargs)
+                mid_channels,
+                out_channels,
+                kernel_size=3,
+                region_num=REGION_NUM_,
+                padding=1,
+                **kargs,
+            )
         else:
-            print('[ WARN ] Use Conv in HistGuidedDRDoubleConv[0] instead of DRconv.')
-            self.conv2 = nn.Conv2d(
-                mid_channels, out_channels, kernel_size=3, padding=1)
+            print("[ WARN ] Use Conv in HistGuidedDRDoubleConv[0] instead of DRconv.")
+            self.conv2 = nn.Conv2d(mid_channels, out_channels, kernel_size=3, padding=1)
 
-        self.inter2 = nn.Sequential(
-            nn.BatchNorm2d(out_channels),
-            nn.ReLU(inplace=True)
-        )
+        self.inter2 = nn.Sequential(nn.BatchNorm2d(out_channels), nn.ReLU(inplace=True))
 
     def forward(self, x, histmap):
         if DRCONV_POSITION_[0]:
@@ -404,18 +447,20 @@ class HistGuidedDRDoubleConv(nn.Module):
 class Up(nn.Module):
     def __init__(self, in_channels, out_channels, bilinear=True, **kargs):
         super().__init__()
-        self.up = nn.Upsample(scale_factor=DOWN_RATIO_,
-                              mode='bilinear', align_corners=True)
-        if CONV_TYPE_ == 'drconv':
+        self.up = nn.Upsample(
+            scale_factor=DOWN_RATIO_, mode="bilinear", align_corners=True
+        )
+        if CONV_TYPE_ == "drconv":
             if HIST_AS_GUIDE_:
                 self.conv = HistDRDoubleConv(
-                    in_channels, out_channels, in_channels // 2)
+                    in_channels, out_channels, in_channels // 2
+                )
             elif GUIDE_FEATURE_FROM_HIST_:
                 self.conv = HistGuidedDRDoubleConv(
-                    in_channels, out_channels, in_channels // 2, **kargs)
+                    in_channels, out_channels, in_channels // 2, **kargs
+                )
             else:
-                self.conv = DRDoubleConv(
-                    in_channels, out_channels, in_channels // 2)
+                self.conv = DRDoubleConv(in_channels, out_channels, in_channels // 2)
         # elif CONV_TYPE_ == 'dconv':
         #     self.conv = HistDyDoubleConv(in_channels, out_channels, in_channels // 2)
 
@@ -429,10 +474,9 @@ class Up(nn.Module):
         diffY = x2.size()[2] - x1.size()[2]
         diffX = x2.size()[3] - x1.size()[3]
 
-        x1 = F.pad(x1, [diffX // 2, diffX - diffX // 2,
-                        diffY // 2, diffY - diffY // 2])
+        x1 = F.pad(x1, [diffX // 2, diffX - diffX // 2, diffY // 2, diffY - diffY // 2])
 
-        if HIST_AS_GUIDE_ or GUIDE_FEATURE_FROM_HIST_ or CONV_TYPE_ == 'dconv':
+        if HIST_AS_GUIDE_ or GUIDE_FEATURE_FROM_HIST_ or CONV_TYPE_ == "dconv":
             x = torch.cat([x2, x1], dim=1)
             res = self.conv(x, histmap)
         else:
@@ -448,8 +492,7 @@ class Down(nn.Module):
         self.use_hist = use_hist
         if not use_hist:
             self.maxpool_conv = nn.Sequential(
-                nn.MaxPool2d(DOWN_RATIO_),
-                DoubleConv(in_channels, out_channels)
+                nn.MaxPool2d(DOWN_RATIO_), DoubleConv(in_channels, out_channels)
             )
         else:
             if HIST_AS_GUIDE_:
@@ -461,11 +504,12 @@ class Down(nn.Module):
             elif GUIDE_FEATURE_FROM_HIST_:
                 self.maxpool = nn.MaxPool2d(DOWN_RATIO_)
                 self.conv = HistGuidedDRDoubleConv(
-                    in_channels, out_channels, in_channels // 2)
+                    in_channels, out_channels, in_channels // 2
+                )
             else:
                 self.maxpool_conv = nn.Sequential(
                     nn.MaxPool2d(DOWN_RATIO_),
-                    DRDoubleConv(in_channels, out_channels, in_channels // 2)
+                    DRDoubleConv(in_channels, out_channels, in_channels // 2),
                 )
 
     def forward(self, x, histmap=None):
@@ -488,22 +532,23 @@ class OutConv(nn.Module):
 
 
 class HistUNet(nn.Module):
-    def __init__(self,
-                 in_channels=3,
-                 out_channels=3,
-                 bilinear=True,
-                 n_bins=8,
-                 hist_as_guide=False,
-                 channel_nums=None,
-                 hist_conv_trainable=False,
-                 encoder_use_hist=False,
-                 guide_feature_from_hist=False,
-                 region_num=8,
-                 use_gray_hist=False,
-                 conv_type='drconv',
-                 down_ratio=1,
-                 drconv_position=[1, 1],
-                 ):
+    def __init__(
+        self,
+        in_channels=3,
+        out_channels=3,
+        bilinear=True,
+        n_bins=8,
+        hist_as_guide=False,
+        channel_nums=None,
+        hist_conv_trainable=False,
+        encoder_use_hist=False,
+        guide_feature_from_hist=False,
+        region_num=8,
+        use_gray_hist=False,
+        conv_type="drconv",
+        down_ratio=1,
+        drconv_position=[1, 1],
+    ):
         super().__init__()
         C_NUMS = [16, 32, 64, 128, 256]
         if channel_nums:
@@ -524,17 +569,20 @@ class HistUNet(nn.Module):
 
         if hist_conv_trainable:
             self.hist_conv1 = get_hist_conv(
-                n_bins * in_channels, down_ratio, train=True)
+                n_bins * in_channels, down_ratio, train=True
+            )
             self.hist_conv2 = get_hist_conv(
-                n_bins * in_channels, down_ratio, train=True)
+                n_bins * in_channels, down_ratio, train=True
+            )
             self.hist_conv3 = get_hist_conv(
-                n_bins * in_channels, down_ratio, train=True)
+                n_bins * in_channels, down_ratio, train=True
+            )
         else:
             self.hist_conv = get_hist_conv(n_bins, down_ratio)
 
         factor = 2 if bilinear else 1
         self.inc = DoubleConv(in_channels, C_NUMS[0])
-        if hist_as_guide or guide_feature_from_hist or conv_type == 'dconv':
+        if hist_as_guide or guide_feature_from_hist or conv_type == "dconv":
             extra_c_num = 0
         elif use_gray_hist:
             extra_c_num = n_bins
@@ -543,7 +591,7 @@ class HistUNet(nn.Module):
 
         if guide_feature_from_hist:
             kargs = {
-                'guide_input_channel': n_bins if use_gray_hist else n_bins * in_channels
+                "guide_input_channel": n_bins if use_gray_hist else n_bins * in_channels
             }
         else:
             kargs = {}
@@ -553,21 +601,24 @@ class HistUNet(nn.Module):
         else:
             encoder_extra_c_num = 0
 
-        self.down1 = Down(C_NUMS[0] + encoder_extra_c_num,
-                          C_NUMS[1], use_hist=encoder_use_hist)
-        self.down2 = Down(C_NUMS[1] + encoder_extra_c_num,
-                          C_NUMS[2], use_hist=encoder_use_hist)
-        self.down3 = Down(C_NUMS[2] + encoder_extra_c_num,
-                          C_NUMS[3], use_hist=encoder_use_hist)
-        self.down4 = Down(C_NUMS[3] + encoder_extra_c_num,
-                          C_NUMS[4] // factor, use_hist=encoder_use_hist)
+        self.down1 = Down(
+            C_NUMS[0] + encoder_extra_c_num, C_NUMS[1], use_hist=encoder_use_hist
+        )
+        self.down2 = Down(
+            C_NUMS[1] + encoder_extra_c_num, C_NUMS[2], use_hist=encoder_use_hist
+        )
+        self.down3 = Down(
+            C_NUMS[2] + encoder_extra_c_num, C_NUMS[3], use_hist=encoder_use_hist
+        )
+        self.down4 = Down(
+            C_NUMS[3] + encoder_extra_c_num,
+            C_NUMS[4] // factor,
+            use_hist=encoder_use_hist,
+        )
 
-        self.up1 = Up(C_NUMS[4] + extra_c_num,
-                      C_NUMS[3] // factor, bilinear, **kargs)
-        self.up2 = Up(C_NUMS[3] + extra_c_num,
-                      C_NUMS[2] // factor, bilinear, **kargs)
-        self.up3 = Up(C_NUMS[2] + extra_c_num,
-                      C_NUMS[1] // factor, bilinear, **kargs)
+        self.up1 = Up(C_NUMS[4] + extra_c_num, C_NUMS[3] // factor, bilinear, **kargs)
+        self.up2 = Up(C_NUMS[3] + extra_c_num, C_NUMS[2] // factor, bilinear, **kargs)
+        self.up3 = Up(C_NUMS[2] + extra_c_num, C_NUMS[1] // factor, bilinear, **kargs)
         self.up4 = Up(C_NUMS[1] + extra_c_num, C_NUMS[0], bilinear, **kargs)
         self.outc = OutConv(C_NUMS[0], out_channels)
 
@@ -600,7 +651,9 @@ class HistUNet(nn.Module):
             hist_down8 = self.hist_conv3(hist_down4)
 
         # forward
-        encoder_hists = [None, ] * 4
+        encoder_hists = [
+            None,
+        ] * 4
         if self.encoder_use_hist:
             encoder_hists = [histmap, hist_down2, hist_down4, hist_down8]
 
@@ -617,12 +670,15 @@ class HistUNet(nn.Module):
         x = self.up3(x, x2, hist_down2)
         x = self.up4(x, x1, histmap)
 
-        self.guide_features = [layer.guide_features for layer in [
-            self.up1,
-            self.up2,
-            self.up3,
-            self.up4,
-        ]]
+        self.guide_features = [
+            layer.guide_features
+            for layer in [
+                self.up1,
+                self.up2,
+                self.up3,
+                self.up4,
+            ]
+        ]
 
         logits = self.outc(x)
         return logits
@@ -634,10 +690,10 @@ class LowResHistUNet(HistUNet):
             in_channels=3,
             out_channels=coeff_dim * opt[LUMA_BINS],
             bilinear=True,
-            **opt[HIST_UNET]
+            **opt[HIST_UNET],
         )
         self.coeff_dim = coeff_dim
-        print('[[ WARN ]] Using HistUNet in BilateralUpsampleNet as backbone')
+        print("[[ WARN ]] Using HistUNet in BilateralUpsampleNet as backbone")
 
     def forward(self, x):
         y = super(LowResHistUNet, self).forward(x)
@@ -657,9 +713,9 @@ class BilateralUpsampleNet(nn.Module):
 
     def build_coeffs_network(self, opt):
         # Choose backbone:
-        if opt[BACKBONE] == 'ori':
+        if opt[BACKBONE] == "ori":
             Backbone = LowResNet
-        elif opt[BACKBONE] == 'hist-unet':
+        elif opt[BACKBONE] == "hist-unet":
             Backbone = LowResHistUNet
         else:
             raise NotImplementedError()
@@ -671,19 +727,19 @@ class BilateralUpsampleNet(nn.Module):
             self.apply_coeffs = ApplyCoeffs()
 
         elif opt[COEFFS_TYPE] == GAMMA:
-            print('[[ WARN ]] HDRPointwiseNN use COEFFS_TYPE: GAMMA.')
+            print("[[ WARN ]] HDRPointwiseNN use COEFFS_TYPE: GAMMA.")
 
             # [ 008 ] change affine matrix -> other methods (alpha map, illu map)
             self.coeffs = Backbone(opt=opt, coeff_dim=24)
             self.apply_coeffs = ApplyCoeffsGamma()
 
-        elif opt[COEFFS_TYPE] == 'retinex':
-            print('[[ WARN ]] HDRPointwiseNN use COEFFS_TYPE: retinex.')
+        elif opt[COEFFS_TYPE] == "retinex":
+            print("[[ WARN ]] HDRPointwiseNN use COEFFS_TYPE: retinex.")
             self.coeffs = Backbone(opt=opt, coeff_dim=3)
             self.apply_coeffs = ApplyCoeffsRetinex()
 
         else:
-            raise NotImplementedError(f'[ ERR ] coeff type {opt[COEFFS_TYPE]} unkown.')
+            raise NotImplementedError(f"[ ERR ] coeff type {opt[COEFFS_TYPE]} unkown.")
         # ─────────────────────────────────────────────────────────────────────────────
 
     def forward(self, lowres, fullres):
@@ -741,11 +797,14 @@ def get_hist(img, n_bins, grayscale=False):
     """
     if grayscale:
         img = get_gray(img)
-    return torch.stack([
-        torch.nn.functional.relu(
-            1 - torch.abs(img - (2 * b - 1) / float(2 * n_bins)) * float(n_bins))
-        for b in range(1, n_bins + 1)
-    ])
+    return torch.stack(
+        [
+            torch.nn.functional.relu(
+                1 - torch.abs(img - (2 * b - 1) / float(2 * n_bins)) * float(n_bins)
+            )
+            for b in range(1, n_bins + 1)
+        ]
+    )
 
 
 def get_hist_conv(n_bins, kernel_size=2, train=False):
@@ -753,14 +812,14 @@ def get_hist_conv(n_bins, kernel_size=2, train=False):
     Return a conv kernel.
     The kernel is used to apply on the histogram map, shrinking the scale of the hist-map.
     """
-    conv = torch.nn.Conv2d(n_bins, n_bins, kernel_size,
-                           kernel_size, bias=False, groups=1)
+    conv = torch.nn.Conv2d(
+        n_bins, n_bins, kernel_size, kernel_size, bias=False, groups=1
+    )
     conv.weight.data.zero_()
     for i in range(conv.weight.shape[1]):
-        alpha = kernel_size ** 2
+        alpha = kernel_size**2
         #         alpha = 1
-        conv.weight.data[i, i, ...] = torch.ones(
-            kernel_size, kernel_size) / alpha
+        conv.weight.data[i, i, ...] = torch.ones(kernel_size, kernel_size) / alpha
     if not train:
         conv.requires_grad_(False)
     return conv
@@ -777,7 +836,7 @@ class DoubleConv(nn.Module):
             nn.ReLU(inplace=True),
             nn.Conv2d(mid_channels, out_channels, kernel_size=3, padding=1),
             nn.BatchNorm2d(out_channels),
-            nn.ReLU(inplace=True)
+            nn.ReLU(inplace=True),
         )
 
     def forward(self, x):
@@ -794,7 +853,7 @@ class DeepWBNet(nn.Module):
         low_x = self.down_sampler(x)
         res = net(low_x, x)
         try:
-            self.res.update({'guide_features': net.guide_features})
+            self.res.update({"guide_features": net.guide_features})
         except:
             ...
             # print('[yellow]No guide feature found in BilateralUpsampleNet[/yellow]')
@@ -804,7 +863,8 @@ class DeepWBNet(nn.Module):
         super(DeepWBNet, self).__init__()
         self.opt = opt
         self.down_sampler = lambda x: F.interpolate(
-            x, size=(256, 256), mode='bicubic', align_corners=False)
+            x, size=(256, 256), mode="bicubic", align_corners=False
+        )
         self.illu_net = self.build_illu_net()
 
         # [ 021 ] use 2 illu nets (do not share weights).
@@ -812,7 +872,7 @@ class DeepWBNet(nn.Module):
             self.illu_net2 = self.build_illu_net()
 
         # self.guide_net = GuideNN(out_channel=3)
-        if opt[HOW_TO_FUSE] in ['cnn-weights', 'cnn-direct', 'cnn-softmax3']:
+        if opt[HOW_TO_FUSE] in ["cnn-weights", "cnn-direct", "cnn-softmax3"]:
             # self.out_net = UNet(in_channels=9, wavelet=opt[USE_WAVELET])
 
             # [ 008-u1 ] use a simple network
@@ -822,19 +882,19 @@ class DeepWBNet(nn.Module):
                 nn.ReLU(inplace=True),
                 nn.Conv2d(nf, nf, 3, 1, 1),
                 nn.ReLU(inplace=True),
-                NONLocalBlock2D(nf, sub_sample='bilinear', bn_layer=False),
+                NONLocalBlock2D(nf, sub_sample="bilinear", bn_layer=False),
                 nn.Conv2d(nf, nf, 1),
                 nn.ReLU(inplace=True),
                 nn.Conv2d(nf, 3, 1),
-                NONLocalBlock2D(3, sub_sample='bilinear', bn_layer=False),
+                NONLocalBlock2D(3, sub_sample="bilinear", bn_layer=False),
             )
 
-        elif opt[HOW_TO_FUSE] in ['cnn-color']:
+        elif opt[HOW_TO_FUSE] in ["cnn-color"]:
             # self.out_net = UNet(in_channels=3, wavelet=opt[USE_WAVELET])
             ...
 
         if not self.opt[BACKBONE_OUT_ILLU]:
-            print('[[ WARN ]] Use output of backbone as brighten & darken directly.')
+            print("[[ WARN ]] Use output of backbone as brighten & darken directly.")
         self.res = {}
 
     def decomp(self, x1, illu_map):
@@ -863,28 +923,25 @@ class DeepWBNet(nn.Module):
             r, g, b = x[:, 0] + 1, x[:, 1] + 1, x[:, 2] + 1
 
             # init attn map as illumination channel of original input img:
-            attn_map = (1. - (0.299 * r + 0.587 * g +
-                              0.114 * b) / 2.).unsqueeze(1)
+            attn_map = (1.0 - (0.299 * r + 0.587 * g + 0.114 * b) / 2.0).unsqueeze(1)
             inverse_attn_map = 1 - attn_map
             for _ in range(3):
                 inverse_attn_map, attn_map = self.one_iter(
-                    x, attn_map, inverse_attn_map)
+                    x, attn_map, inverse_attn_map
+                )
             illu_map, inverse_illu_map = inverse_attn_map, attn_map
 
-        elif self.opt[BACKBONE] == 'ynet':
+        elif self.opt[BACKBONE] == "ynet":
             # [ 024 ] one encoder, 2 decoders.
-            illu_map, inverse_illu_map = self.backbone_forward(
-                self.illu_net, x1)
+            illu_map, inverse_illu_map = self.backbone_forward(self.illu_net, x1)
 
         else:
             illu_map = self.backbone_forward(self.illu_net, x1)
             if self.opt[SHARE_WEIGHTS]:
-                inverse_illu_map = self.backbone_forward(
-                    self.illu_net, inverse_x1)
+                inverse_illu_map = self.backbone_forward(self.illu_net, inverse_x1)
             else:
                 # [ 021 ] use 2 illu nets
-                inverse_illu_map = self.backbone_forward(
-                    self.illu_net2, inverse_x1)
+                inverse_illu_map = self.backbone_forward(self.illu_net2, inverse_x1)
         # ──────────────────────────────────────────────────────────
 
         if self.opt[BACKBONE_OUT_ILLU]:
@@ -896,16 +953,18 @@ class DeepWBNet(nn.Module):
         darken_x1 = 1 - inverse_x2
         # ──────────────────────────────────────────────────────────
 
-        self.res.update({
-            ILLU_MAP: illu_map,
-            INVERSE_ILLU_MAP: inverse_illu_map,
-            BRIGHTEN_INPUT: brighten_x1,
-            DARKEN_INPUT: darken_x1,
-        })
+        self.res.update(
+            {
+                ILLU_MAP: illu_map,
+                INVERSE_ILLU_MAP: inverse_illu_map,
+                BRIGHTEN_INPUT: brighten_x1,
+                DARKEN_INPUT: darken_x1,
+            }
+        )
 
         # fusion:
         # ──────────────────────────────────────────────────────────
-        if self.opt[HOW_TO_FUSE] == 'cnn-weights':
+        if self.opt[HOW_TO_FUSE] == "cnn-weights":
             # [ 009 ] only fuse 2 output image
             # fused_x = torch.cat([brighten_x1, darken_x1], dim=1)
 
@@ -922,7 +981,7 @@ class DeepWBNet(nn.Module):
             # out = brighten_x1 * w1 + darken_x1 * w2
             # ────────────────────────────────────────────────────────────
 
-        elif self.opt[HOW_TO_FUSE] == 'cnn-softmax3':
+        elif self.opt[HOW_TO_FUSE] == "cnn-softmax3":
             fused_x = torch.cat([x, brighten_x1, darken_x1], dim=1)
             # <- 3 channels, [ N, 3, H, W ]
             weight_map = F.softmax(self.out_net(fused_x), dim=1)
@@ -932,29 +991,36 @@ class DeepWBNet(nn.Module):
             out = x * w1 + brighten_x1 * w2 + darken_x1 * w3
 
         # [ 006 ] get output directly from UNet
-        elif self.opt[HOW_TO_FUSE] == 'cnn-direct':
+        elif self.opt[HOW_TO_FUSE] == "cnn-direct":
             fused_x = torch.cat([x, brighten_x1, darken_x1], dim=1)
             out = self.out_net(fused_x)
 
         # [ 016 ] average 2 outputs.
-        elif self.opt[HOW_TO_FUSE] == 'avg':
+        elif self.opt[HOW_TO_FUSE] == "avg":
             out = 0.5 * brighten_x1 + 0.5 * darken_x1
 
         # [ 017 ] global color ajust
-        elif self.opt[HOW_TO_FUSE] == 'cnn-color':
+        elif self.opt[HOW_TO_FUSE] == "cnn-color":
             out = 0.5 * brighten_x1 + 0.5 * darken_x1
 
         # elif self.opt[HOW_TO_FUSE] == 'cnn-residual':
         #     out = x +
 
         else:
-            raise NotImplementedError(f'Unknown fusion method: {self.opt[HOW_TO_FUSE]}')
+            raise NotImplementedError(f"Unknown fusion method: {self.opt[HOW_TO_FUSE]}")
 
         return out
 
 
 class _NonLocalBlockND(nn.Module):
-    def __init__(self, in_channels, inter_channels=None, dimension=3, sub_sample='pool', bn_layer=True):
+    def __init__(
+        self,
+        in_channels,
+        inter_channels=None,
+        dimension=3,
+        sub_sample="pool",
+        bn_layer=True,
+    ):
 
         super(_NonLocalBlockND, self).__init__()
 
@@ -977,39 +1043,66 @@ class _NonLocalBlockND(nn.Module):
             bn = nn.BatchNorm3d
         elif dimension == 2:
             conv_nd = nn.Conv2d
-            if sub_sample == 'pool':
+            if sub_sample == "pool":
                 max_pool_layer = nn.MaxPool2d(kernel_size=(2, 2))
-            elif sub_sample == 'bilinear':
+            elif sub_sample == "bilinear":
                 max_pool_layer = nn.UpsamplingBilinear2d([16, 16])
             else:
-                raise NotImplementedError(f'[ ERR ] Unknown down sample method: {sub_sample}')
+                raise NotImplementedError(
+                    f"[ ERR ] Unknown down sample method: {sub_sample}"
+                )
             bn = nn.BatchNorm2d
         else:
             conv_nd = nn.Conv1d
             max_pool_layer = nn.MaxPool1d(kernel_size=(2))
             bn = nn.BatchNorm1d
 
-        self.g = conv_nd(in_channels=self.in_channels, out_channels=self.inter_channels,
-                         kernel_size=1, stride=1, padding=0)
+        self.g = conv_nd(
+            in_channels=self.in_channels,
+            out_channels=self.inter_channels,
+            kernel_size=1,
+            stride=1,
+            padding=0,
+        )
 
         if bn_layer:
             self.W = nn.Sequential(
-                conv_nd(in_channels=self.inter_channels, out_channels=self.in_channels,
-                        kernel_size=1, stride=1, padding=0),
-                bn(self.in_channels)
+                conv_nd(
+                    in_channels=self.inter_channels,
+                    out_channels=self.in_channels,
+                    kernel_size=1,
+                    stride=1,
+                    padding=0,
+                ),
+                bn(self.in_channels),
             )
             nn.init.constant_(self.W[1].weight, 0)
             nn.init.constant_(self.W[1].bias, 0)
         else:
-            self.W = conv_nd(in_channels=self.inter_channels, out_channels=self.in_channels,
-                             kernel_size=1, stride=1, padding=0)
+            self.W = conv_nd(
+                in_channels=self.inter_channels,
+                out_channels=self.in_channels,
+                kernel_size=1,
+                stride=1,
+                padding=0,
+            )
             nn.init.constant_(self.W.weight, 0)
             nn.init.constant_(self.W.bias, 0)
 
-        self.theta = conv_nd(in_channels=self.in_channels, out_channels=self.inter_channels,
-                             kernel_size=1, stride=1, padding=0)
-        self.phi = conv_nd(in_channels=self.in_channels, out_channels=self.inter_channels,
-                           kernel_size=1, stride=1, padding=0)
+        self.theta = conv_nd(
+            in_channels=self.in_channels,
+            out_channels=self.inter_channels,
+            kernel_size=1,
+            stride=1,
+            padding=0,
+        )
+        self.phi = conv_nd(
+            in_channels=self.in_channels,
+            out_channels=self.inter_channels,
+            kernel_size=1,
+            stride=1,
+            padding=0,
+        )
 
         if sub_sample:
             self.g = nn.Sequential(self.g, max_pool_layer)
@@ -1045,56 +1138,77 @@ class _NonLocalBlockND(nn.Module):
 
 
 class NONLocalBlock1D(_NonLocalBlockND):
-    def __init__(self, in_channels, inter_channels=None, sub_sample='pool', bn_layer=True):
-        super(NONLocalBlock1D, self).__init__(in_channels,
-                                              inter_channels=inter_channels,
-                                              dimension=1, sub_sample=sub_sample,
-                                              bn_layer=bn_layer)
+    def __init__(
+        self, in_channels, inter_channels=None, sub_sample="pool", bn_layer=True
+    ):
+        super(NONLocalBlock1D, self).__init__(
+            in_channels,
+            inter_channels=inter_channels,
+            dimension=1,
+            sub_sample=sub_sample,
+            bn_layer=bn_layer,
+        )
 
 
 class NONLocalBlock2D(_NonLocalBlockND):
-    def __init__(self, in_channels, inter_channels=None, sub_sample='pool', bn_layer=True):
-        super(NONLocalBlock2D, self).__init__(in_channels,
-                                              inter_channels=inter_channels,
-                                              dimension=2, sub_sample=sub_sample,
-                                              bn_layer=bn_layer, )
+    def __init__(
+        self, in_channels, inter_channels=None, sub_sample="pool", bn_layer=True
+    ):
+        super(NONLocalBlock2D, self).__init__(
+            in_channels,
+            inter_channels=inter_channels,
+            dimension=2,
+            sub_sample=sub_sample,
+            bn_layer=bn_layer,
+        )
 
 
 class NONLocalBlock3D(_NonLocalBlockND):
-    def __init__(self, in_channels, inter_channels=None, sub_sample='pool', bn_layer=True):
-        super(NONLocalBlock3D, self).__init__(in_channels,
-                                              inter_channels=inter_channels,
-                                              dimension=3, sub_sample=sub_sample,
-                                              bn_layer=bn_layer, )
+    def __init__(
+        self, in_channels, inter_channels=None, sub_sample="pool", bn_layer=True
+    ):
+        super(NONLocalBlock3D, self).__init__(
+            in_channels,
+            inter_channels=inter_channels,
+            dimension=3,
+            sub_sample=sub_sample,
+            bn_layer=bn_layer,
+        )
 
 
 class asign_index(torch.autograd.Function):
     @staticmethod
     def forward(ctx, kernel, guide_feature):
         ctx.save_for_backward(kernel, guide_feature)
-        guide_mask = torch.zeros_like(guide_feature).scatter_(1, guide_feature.argmax(dim=1, keepdim=True),
-                                                              1).unsqueeze(2)  # B x 3 x 1 x 25 x 25
+        guide_mask = (
+            torch.zeros_like(guide_feature)
+            .scatter_(1, guide_feature.argmax(dim=1, keepdim=True), 1)
+            .unsqueeze(2)
+        )  # B x 3 x 1 x 25 x 25
         return torch.sum(kernel * guide_mask, dim=1)
 
     @staticmethod
     def backward(ctx, grad_output):
         kernel, guide_feature = ctx.saved_tensors
-        guide_mask = torch.zeros_like(guide_feature).scatter_(1, guide_feature.argmax(dim=1, keepdim=True),
-                                                              1).unsqueeze(2)  # B x 3 x 1 x 25 x 25
-        grad_kernel = grad_output.clone().unsqueeze(
-            1) * guide_mask  # B x 3 x 256 x 25 x 25
+        guide_mask = (
+            torch.zeros_like(guide_feature)
+            .scatter_(1, guide_feature.argmax(dim=1, keepdim=True), 1)
+            .unsqueeze(2)
+        )  # B x 3 x 1 x 25 x 25
+        grad_kernel = (
+            grad_output.clone().unsqueeze(1) * guide_mask
+        )  # B x 3 x 256 x 25 x 25
         grad_guide = grad_output.clone().unsqueeze(1) * kernel  # B x 3 x 256 x 25 x 25
         grad_guide = grad_guide.sum(dim=2)  # B x 3 x 25 x 25
         softmax = F.softmax(guide_feature, 1)  # B x 3 x 25 x 25
-        grad_guide = softmax * \
-            (grad_guide - (softmax * grad_guide).sum(dim=1,
-                                                     keepdim=True))  # B x 3 x 25 x 25
+        grad_guide = softmax * (
+            grad_guide - (softmax * grad_guide).sum(dim=1, keepdim=True)
+        )  # B x 3 x 25 x 25
         return grad_kernel, grad_guide
 
 
 def xcorr_slow(x, kernel, kwargs):
-    """for loop to calculate cross correlation
-    """
+    """for loop to calculate cross correlation"""
     batch = x.size()[0]
     out = []
     for i in range(batch):
@@ -1109,8 +1223,7 @@ def xcorr_slow(x, kernel, kwargs):
 
 
 def xcorr_fast(x, kernel, kwargs):
-    """group conv2d to calculate cross correlation
-    """
+    """group conv2d to calculate cross correlation"""
     batch = kernel.size()[0]
     pk = kernel.view(-1, x.size()[1], kernel.size()[2], kernel.size()[3])
     px = x.view(1, -1, x.size()[2], x.size()[3])
@@ -1126,13 +1239,11 @@ class Corr(Function):
 
     @staticmethod
     def forward(self, x, kernel, groups, kwargs):
-        """group conv2d to calculate cross correlation
-        """
+        """group conv2d to calculate cross correlation"""
         batch = x.size(0)
         channel = x.size(1)
         x = x.view(1, -1, x.size(2), x.size(3))
-        kernel = kernel.view(-1, channel // groups,
-                             kernel.size(2), kernel.size(3))
+        kernel = kernel.view(-1, channel // groups, kernel.size(2), kernel.size(3))
         out = F.conv2d(x, kernel, **kwargs, groups=groups * batch)
         out = out.view(batch, -1, out.size(2), out.size(3))
         return out
@@ -1164,7 +1275,15 @@ class Correlation(nn.Module):
 
 
 class DRConv2d(nn.Module):
-    def __init__(self, in_channels, out_channels, kernel_size, region_num=8, guide_input_channel=False, **kwargs):
+    def __init__(
+        self,
+        in_channels,
+        out_channels,
+        kernel_size,
+        region_num=8,
+        guide_input_channel=False,
+        **kwargs,
+    ):
         super(DRConv2d, self).__init__()
         self.region_num = region_num
         self.guide_input_channel = guide_input_channel
@@ -1180,22 +1299,28 @@ class DRConv2d(nn.Module):
         else:
             raise "Svertki slomalis"
         conv_kernel_stride = inp_size // kernel_size
-        conv_kernel_kernel_size = inp_size - (kernel_size-1)*conv_kernel_stride
+        conv_kernel_kernel_size = inp_size - (kernel_size - 1) * conv_kernel_stride
 
         self.conv_kernel = nn.Sequential(
             nn.AvgPool2d(conv_kernel_kernel_size, stride=conv_kernel_stride),
             nn.Conv2d(in_channels, region_num * region_num, kernel_size=1),
             nn.Sigmoid(),
-            nn.Conv2d(region_num * region_num, region_num * in_channels * out_channels, kernel_size=1,
-                      groups=region_num)
+            nn.Conv2d(
+                region_num * region_num,
+                region_num * in_channels * out_channels,
+                kernel_size=1,
+                groups=region_num,
+            ),
         )
         if guide_input_channel:
             # get guide feature from a user input tensor.
             self.conv_guide = nn.Conv2d(
-                guide_input_channel, region_num, kernel_size=kernel_size, **kwargs)
+                guide_input_channel, region_num, kernel_size=kernel_size, **kwargs
+            )
         else:
             self.conv_guide = nn.Conv2d(
-                in_channels, region_num, kernel_size=kernel_size, **kwargs)
+                in_channels, region_num, kernel_size=kernel_size, **kwargs
+            )
 
         self.corr = Correlation(use_slow=False)
         self.kwargs = kwargs
@@ -1205,8 +1330,9 @@ class DRConv2d(nn.Module):
         kernel = self.conv_kernel(input)
         # kernel = kernel.view(kernel.size(0), -1, kernel.size(2), kernel.size(3))  # B x (r*in*out) x W X H
         output = self.corr(input, kernel, **self.kwargs)  # B x (r*out) x W x H
-        output = output.view(output.size(0), self.region_num, -1,
-                             output.size(2), output.size(3))  # B x r x out x W x H
+        output = output.view(
+            output.size(0), self.region_num, -1, output.size(2), output.size(3)
+        )  # B x r x out x W x H
         if self.guide_input_channel:
             guide_feature = self.conv_guide(guide_input)
         else:
@@ -1227,188 +1353,190 @@ class HistDRConv2d(DRConv2d):
 
         kernel = self.conv_kernel(input)
         output = self.corr(input, kernel, **self.kwargs)  # B x (r*out) x W x H
-        output = output.view(output.size(0), self.region_num, -1,
-                             output.size(2), output.size(3))  # B x r x out x W x H
+        output = output.view(
+            output.size(0), self.region_num, -1, output.size(2), output.size(3)
+        )  # B x r x out x W x H
         output = self.asign_index(output, histmap)
         return output
 
+
 LOGGER_BUFFER_LOCK = False
-SPLIT = '————————————————————————————————————————————————————'
+SPLIT = "————————————————————————————————————————————————————"
 
 GLOBAL_SEED = 233
-TEST_RESULT_DIRNAME = 'test_result'
-TRAIN_LOG_DIRNAME = 'log'
-CONFIG_DIR = 'config'
-CONFIG_FILEPATH = 'config/config.yaml'
-OPT_FILENAME = 'CONFIG.yaml'
-LOG_FILENAME = 'run.log'
-LOG_TIME_FORMAT = '%Y-%m-%d_%H:%M:%S'
-INPUT = 'input'
-OUTPUT = 'output'
-GT = 'GT'
-STRING_FALSE = 'False'
-SKIP_FLAG = 'q'
-DEFAULTS = 'defaults'
-HYDRA = 'hydra'
+TEST_RESULT_DIRNAME = "test_result"
+TRAIN_LOG_DIRNAME = "log"
+CONFIG_DIR = "config"
+CONFIG_FILEPATH = "config/config.yaml"
+OPT_FILENAME = "CONFIG.yaml"
+LOG_FILENAME = "run.log"
+LOG_TIME_FORMAT = "%Y-%m-%d_%H:%M:%S"
+INPUT = "input"
+OUTPUT = "output"
+GT = "GT"
+STRING_FALSE = "False"
+SKIP_FLAG = "q"
+DEFAULTS = "defaults"
+HYDRA = "hydra"
 
-INPUT_FPATH = 'input_fpath'
-GT_FPATH = 'gt_fpath'
+INPUT_FPATH = "input_fpath"
+GT_FPATH = "gt_fpath"
 
-DEBUG = 'debug'
-BACKEND = 'backend'
-CHECKPOINT_PATH = 'checkpoint_path'
-LOG_DIRPATH = 'log_dirpath'
-IMG_DIRPATH = 'img_dirpath'
-DATALOADER_N = 'dataloader_num_worker'
-VAL_DEBUG_STEP_NUMS = 'val_debug_step_nums'
-VALID_EVERY = 'valid_every'
-LOG_EVERY = 'log_every'
-AUGMENTATION = 'aug'
-RUNTIME_PRECISION = 'runtime_precision'
-NUM_EPOCH = 'num_epoch'
-NAME = 'name'
-LOSS = 'loss'
-TRAIN_DATA = 'train_ds'
-VALID_DATA = 'valid_ds'
-TEST_DATA = 'test_ds'
-GPU = 'gpu'
-RUNTIME = 'runtime'
-CLASS = 'class'
-MODELNAME = 'modelname'
-BATCHSIZE = 'batchsize'
-VALID_BATCHSIZE = 'valid_batchsize'
-LR = 'lr'
-CHECKPOINT_MONITOR = 'checkpoint_monitor'
-MONITOR_MODE = 'monitor_mode'
-COMMENT = 'comment'
-EARLY_STOP = 'early_stop'
-AMP_BACKEND = 'amp_backend'
-AMP_LEVEL = 'amp_level'
-VALID_RATIO = 'valid_ratio'
+DEBUG = "debug"
+BACKEND = "backend"
+CHECKPOINT_PATH = "checkpoint_path"
+LOG_DIRPATH = "log_dirpath"
+IMG_DIRPATH = "img_dirpath"
+DATALOADER_N = "dataloader_num_worker"
+VAL_DEBUG_STEP_NUMS = "val_debug_step_nums"
+VALID_EVERY = "valid_every"
+LOG_EVERY = "log_every"
+AUGMENTATION = "aug"
+RUNTIME_PRECISION = "runtime_precision"
+NUM_EPOCH = "num_epoch"
+NAME = "name"
+LOSS = "loss"
+TRAIN_DATA = "train_ds"
+VALID_DATA = "valid_ds"
+TEST_DATA = "test_ds"
+GPU = "gpu"
+RUNTIME = "runtime"
+CLASS = "class"
+MODELNAME = "modelname"
+BATCHSIZE = "batchsize"
+VALID_BATCHSIZE = "valid_batchsize"
+LR = "lr"
+CHECKPOINT_MONITOR = "checkpoint_monitor"
+MONITOR_MODE = "monitor_mode"
+COMMENT = "comment"
+EARLY_STOP = "early_stop"
+AMP_BACKEND = "amp_backend"
+AMP_LEVEL = "amp_level"
+VALID_RATIO = "valid_ratio"
 
-LTV_LOSS = 'ltv'
-COS_LOSS = 'cos'
-SSIM_LOSS = 'ssim_loss'
-L1_LOSS = 'l1_loss'
-COLOR_LOSS = 'l_color'
-SPATIAL_LOSS = 'l_spa'
-EXPOSURE_LOSS = 'l_exp'
-WEIGHTED_LOSS = 'weighted_loss'
-PSNR_LOSS = 'psnr_loss'
-HIST_LOSS = 'hist_loss'
-INTER_HIST_LOSS = 'inter_hist_loss'
-VGG_LOSS = 'vgg_loss'
+LTV_LOSS = "ltv"
+COS_LOSS = "cos"
+SSIM_LOSS = "ssim_loss"
+L1_LOSS = "l1_loss"
+COLOR_LOSS = "l_color"
+SPATIAL_LOSS = "l_spa"
+EXPOSURE_LOSS = "l_exp"
+WEIGHTED_LOSS = "weighted_loss"
+PSNR_LOSS = "psnr_loss"
+HIST_LOSS = "hist_loss"
+INTER_HIST_LOSS = "inter_hist_loss"
+VGG_LOSS = "vgg_loss"
 
-PSNR = 'psnr'
-SSIM = 'ssim'
+PSNR = "psnr"
+SSIM = "ssim"
 
-VERTICAL_FLIP = 'v-flip'
-HORIZON_FLIP = 'h-flip'
-DOWNSAMPLE = 'downsample'
-RESIZE_DIVISIBLE_N = 'resize_divisible_n'
-CROP = 'crop'
-LIGHTNESS_ADJUST = 'lightness_adjust'
-CONTRAST_ADJUST = 'contrast_adjust'
+VERTICAL_FLIP = "v-flip"
+HORIZON_FLIP = "h-flip"
+DOWNSAMPLE = "downsample"
+RESIZE_DIVISIBLE_N = "resize_divisible_n"
+CROP = "crop"
+LIGHTNESS_ADJUST = "lightness_adjust"
+CONTRAST_ADJUST = "contrast_adjust"
 
-BUNET = 'bilateral_upsample_net'
-UNET = 'unet'
-HIST_UNET = 'hist_unet'
-PREDICT_ILLUMINATION = 'predict_illumination'
-FILTERS = 'filters'
+BUNET = "bilateral_upsample_net"
+UNET = "unet"
+HIST_UNET = "hist_unet"
+PREDICT_ILLUMINATION = "predict_illumination"
+FILTERS = "filters"
 
-MODE = 'mode'
-COLOR_SPACE = 'color_space'
-BETA1 = 'beta1'
-BETA2 = 'beta2'
-LAMBDA_SMOOTH = 'lambda_smooth'
-LAMBDA_MONOTONICITY = 'lambda_monotonicity'
-MSE = 'mse'
-L2_LOSS = 'l2_loss'
-TV_CONS = 'tv_cons'
-MN_CONS = 'mv_cons'
-WEIGHTS_NORM = 'wnorm'
-TEST_PTH = 'test_pth'
+MODE = "mode"
+COLOR_SPACE = "color_space"
+BETA1 = "beta1"
+BETA2 = "beta2"
+LAMBDA_SMOOTH = "lambda_smooth"
+LAMBDA_MONOTONICITY = "lambda_monotonicity"
+MSE = "mse"
+L2_LOSS = "l2_loss"
+TV_CONS = "tv_cons"
+MN_CONS = "mv_cons"
+WEIGHTS_NORM = "wnorm"
+TEST_PTH = "test_pth"
 
-LUMA_BINS = 'luma_bins'
-CHANNEL_MULTIPLIER = 'channel_multiplier'
-SPATIAL_BIN = 'spatial_bin'
-BATCH_NORM = 'batch_norm'
-NET_INPUT_SIZE = 'net_input_size'
-LOW_RESOLUTION = 'low_resolution'
-ONNX_EXPORTING_MODE = 'onnx_exporting_mode'
-SELF_SUPERVISED = 'self_supervised'
-COEFFS_TYPE = 'coeffs_type'
-ILLU_MAP_POWER = 'illu_map_power'
-GAMMA = 'gamma'
-MATRIX = 'matrix'
-GUIDEMAP = 'guidemap'
-USE_HSV = 'use_hsv'
+LUMA_BINS = "luma_bins"
+CHANNEL_MULTIPLIER = "channel_multiplier"
+SPATIAL_BIN = "spatial_bin"
+BATCH_NORM = "batch_norm"
+NET_INPUT_SIZE = "net_input_size"
+LOW_RESOLUTION = "low_resolution"
+ONNX_EXPORTING_MODE = "onnx_exporting_mode"
+SELF_SUPERVISED = "self_supervised"
+COEFFS_TYPE = "coeffs_type"
+ILLU_MAP_POWER = "illu_map_power"
+GAMMA = "gamma"
+MATRIX = "matrix"
+GUIDEMAP = "guidemap"
+USE_HSV = "use_hsv"
 
-USE_WAVELET = 'use_wavelet'
-NON_LOCAL = 'use_non_local'
-USE_ATTN_MAP = 'use_attn_map'
-ILLUMAP_CHANNEL = 'illumap_channel'
-HOW_TO_FUSE = 'how_to_fuse'
-SHARE_WEIGHTS = 'share_weights'
-BACKBONE = 'backbone'
-ARCH = 'arch'
-N_BINS = 'n_bins'
-BACKBONE_OUT_ILLU = 'backbone_out_illu'
-CONV_TYPE = 'conv_type'
-HIST_AS_GUIDE_ = 'hist_as_guide'
-ENCODER_USE_HIST = 'encoder_use_hist'
-GUIDE_FEATURE_FROM_HIST = 'guide_feature_from_hist'
-NC = 'channel_nums'
+USE_WAVELET = "use_wavelet"
+NON_LOCAL = "use_non_local"
+USE_ATTN_MAP = "use_attn_map"
+ILLUMAP_CHANNEL = "illumap_channel"
+HOW_TO_FUSE = "how_to_fuse"
+SHARE_WEIGHTS = "share_weights"
+BACKBONE = "backbone"
+ARCH = "arch"
+N_BINS = "n_bins"
+BACKBONE_OUT_ILLU = "backbone_out_illu"
+CONV_TYPE = "conv_type"
+HIST_AS_GUIDE_ = "hist_as_guide"
+ENCODER_USE_HIST = "encoder_use_hist"
+GUIDE_FEATURE_FROM_HIST = "guide_feature_from_hist"
+NC = "channel_nums"
 
-ILLU_MAP = 'illu_map'
-INVERSE_ILLU_MAP = 'inverse_illu_map'
-BRIGHTEN_INPUT = 'brighten_input'
-DARKEN_INPUT = 'darken_input'
+ILLU_MAP = "illu_map"
+INVERSE_ILLU_MAP = "inverse_illu_map"
+BRIGHTEN_INPUT = "brighten_input"
+DARKEN_INPUT = "darken_input"
 
-TRAIN = 'train'
-TEST = 'test'
-VALID = 'valid'
-ONNX = 'onnx'
-CONDOR = 'condor'
-IMAGES = 'images'
+TRAIN = "train"
+TEST = "test"
+VALID = "valid"
+ONNX = "onnx"
+CONDOR = "condor"
+IMAGES = "images"
 
 conf = {
     "hist_unet": {
-        'n_bins': 8,
-        'hist_as_guide': False,
-        'channel_nums': [8, 16, 32, 64, 128],
-        'encoder_use_hist': False,
-        'guide_feature_from_hist': True,
-        'region_num': 2,
-        'use_gray_hist': False,
-        'conv_type': 'drconv',
-        'down_ratio': 2,
-        'hist_conv_trainable': False,
-        'drconv_position': [0, 1]
+        "n_bins": 8,
+        "hist_as_guide": False,
+        "channel_nums": [8, 16, 32, 64, 128],
+        "encoder_use_hist": False,
+        "guide_feature_from_hist": True,
+        "region_num": 2,
+        "use_gray_hist": False,
+        "conv_type": "drconv",
+        "down_ratio": 2,
+        "hist_conv_trainable": False,
+        "drconv_position": [0, 1],
     },
-    'predict_illumination': False,
-    'luma_bins': 8,
-    'channel_multiplier': 1,
-    'spatial_bin': 16,
-    'batch_norm': True,
-    'low_resolution': 256,
-    'coeffs_type': 'matrix',
-    'conv_type': 'conv',
-    'illu_map_power': False,
-    'use_wavelet': False,
-    'use_attn_map': False,
-    'use_non_local': False,
-    'how_to_fuse': 'cnn-weights',
-    'backbone': 'hist-unet',
-    'backbone_out_illu': True,
-    'illumap_channel': 3,
-    'share_weights': True,
-    'n_bins': 8,
-    'hist_as_guide': False
+    "predict_illumination": False,
+    "luma_bins": 8,
+    "channel_multiplier": 1,
+    "spatial_bin": 16,
+    "batch_norm": True,
+    "low_resolution": 256,
+    "coeffs_type": "matrix",
+    "conv_type": "conv",
+    "illu_map_power": False,
+    "use_wavelet": False,
+    "use_attn_map": False,
+    "use_non_local": False,
+    "how_to_fuse": "cnn-weights",
+    "backbone": "hist-unet",
+    "backbone_out_illu": True,
+    "illumap_channel": 3,
+    "share_weights": True,
+    "n_bins": 8,
+    "hist_as_guide": False,
 }
 
 
-'''
+"""
 def main():
 
     weights = torch.load("trained_on_MSEC.ckpt")["state_dict"]
@@ -1440,7 +1568,7 @@ def main():
     res = cv2.resize(res, inp_size[::-1])
 
     cv2.imwrite("res/IMG_2416.png", res)
-'''
+"""
 
 
 class TritonPythonModel:
@@ -1459,7 +1587,7 @@ class TritonPythonModel:
     def predict(self, img):
         img = to_tensor(img).unsqueeze(0)
         with torch.no_grad():
-            res = (self.model(img)*255).permute((0, 2, 3, 1)).cpu().detach().numpy()
+            res = (self.model(img) * 255).permute((0, 2, 3, 1)).cpu().detach().numpy()
         return res
 
     def execute(self, requests):

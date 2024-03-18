@@ -1892,7 +1892,7 @@ input, select, textarea {
 	}
 }
 
-  
+
   .file-color-upload {
 	background-color: #201d1d;
 	width: 600px;
@@ -1900,7 +1900,7 @@ input, select, textarea {
 	margin: 0 auto;
 	padding: 20px;
   }
-  
+
   .file-color-upload-btn {
 	width: 100%;
 	margin: 0;
@@ -1919,26 +1919,26 @@ input, select, textarea {
 			0px 4px 8px rgba(0, 255, 255, 0.5),
 			0px 8px 16px rgba(0, 255, 255, 0.5);
   }
-  
+
   .file-color-upload-btn:hover {
 	background: #113641;
 	color: #ffffff;
 	transition: all .2s ease;
 	cursor: pointer;
   }
-  
+
   .file-color-upload-btn:active {
 	border: 0;
 	transition: all .2s ease;
   }
-  
+
   .file-color-upload-content {
 	display: none;
 	margin: auto;
 	text-align: center;
 	padding: 70px 0;
   }
-  
+
   .file-color-upload-input {
 	position: absolute;
 	margin: 0;
@@ -1949,28 +1949,28 @@ input, select, textarea {
 	opacity: 0;
 	cursor: pointer;
   }
-  
+
   .image-color-upload-wrap {
 	margin-top: 20px;
 	border: 6px dashed #74bdcd;
 	position: relative;
   }
-  
+
   .image-color-dropping,
   .image-color-upload-wrap:hover {
 	background-color: #113641;
 	border: 6px dashed #74bdcd;
   }
-  
+
   .image-color-title-wrap {
 	padding: 0 15px 15px 15px;
 	color: #74bdcd;
   }
-  
+
   .drag-color-text {
 	text-align: center;
   }
-  
+
   .drag-color-text h3 {
 	font-weight: 100;
 	font-size: x-large;
@@ -1978,14 +1978,14 @@ input, select, textarea {
 	color: #ffffff;
 	padding: 60px 0;
   }
-  
+
   .file-color-upload-image {
 	width: 100%;
 	height: 100%;
 	margin: auto;
 	padding: 20px;
   }
-  
+
   .remove-color-image {
 	width: 400px;
 	margin: 0;
@@ -2004,21 +2004,21 @@ input, select, textarea {
 			0px 4px 8px rgba(0, 255, 255, 0.5),
 			0px 8px 16px rgba(0, 255, 255, 0.5);
   }
-  
+
   .remove-color-image:hover {
 	background: #74bdcd;
 	color: #ffffff;
 	transition: all .2s ease;
 	cursor: pointer;
   }
-  
+
   .remove-color-image:active {
 	border: 0;
 	transition: all .2s ease;
   }
 
 
- 
+
 
   .file-mask-upload {
 	background-color: #201d1d;
@@ -2027,7 +2027,7 @@ input, select, textarea {
 	margin: 0 auto;
 	padding: 10px;
   }
-  
+
   .file-mask-upload-btn {
 	width: 100%;
 	margin: 0;
@@ -2046,26 +2046,26 @@ input, select, textarea {
 			0px 4px 8px rgba(0, 255, 255, 0.5),
 			0px 8px 16px rgba(0, 255, 255, 0.5);
   }
-  
+
   .file-mask-upload-btn:hover {
 	background: #113641;
 	color: #ffffff;
 	transition: all .2s ease;
 	cursor: pointer;
   }
-  
+
   .file-mask-upload-btn:active {
 	border: 0;
 	transition: all .2s ease;
   }
-  
+
   .file-mask-upload-content {
 	display: none;
 	margin: auto;
 	text-align: center;
 	padding: 70px 0;
   }
-  
+
   .file-mask-upload-input {
 	position: absolute;
 	margin: 0;
@@ -2076,28 +2076,28 @@ input, select, textarea {
 	opacity: 0;
 	cursor: pointer;
   }
-  
+
   .image-mask-upload-wrap {
 	margin-top: 20px;
 	border: 6px dashed #74bdcd;
 	position: relative;
   }
-  
+
   .image-mask-dropping,
   .image-mask-upload-wrap:hover {
 	background-color: #113641;
 	border: 6px dashed #74bdcd;
   }
-  
+
   .image-mask-title-wrap {
 	padding: 0 15px 15px 15px;
 	color: #74bdcd;
   }
-  
+
   .drag-mask-text {
 	text-align: center;
   }
-  
+
   .drag-mask-text h3 {
 	font-weight: 100;
 	font-size: x-large;
@@ -2105,14 +2105,14 @@ input, select, textarea {
 	color: #ffffff;
 	padding: 60px 0;
   }
-  
+
   .file-mask-upload-image {
 	width: 100%;
 	height: 100%;
 	margin: auto;
 	padding: 20px;
   }
-  
+
   .remove-mask-image {
 	width: 400px;
 	margin: 0;
@@ -2131,14 +2131,14 @@ input, select, textarea {
 			0px 4px 8px rgba(0, 255, 255, 0.5),
 			0px 8px 16px rgba(0, 255, 255, 0.5);
   }
-  
+
   .remove-mask-image:hover {
 	background: #74bdcd;
 	color: #ffffff;
 	transition: all .2s ease;
 	cursor: pointer;
   }
-  
+
   .remove-mask-image:active {
 	border: 0;
 	transition: all .2s ease;
