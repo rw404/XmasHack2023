@@ -537,7 +537,3 @@ function uploadFiles() {
 		document.querySelector('.file-gallery-images').src = 'static/gallery_img.jpg?' + new Date().getTime();
 	}, 3000);
 }
-
-
-
-
